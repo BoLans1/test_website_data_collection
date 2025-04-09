@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forms - Analytics Testing Playground</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <!-- Tracking Manager CSS -->
+    <style>
+        /* Tracking Manager Styles */
+        .tracking-manager {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px auto;
+            max-width: 1200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .tracking-manager-header {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tracking-manager-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .tracking-manager-content {
+            padding: 20px;
+        }
+
+        .tracking-manager .tabs {
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #6c757d;
+            position: relative;
+        }
+
+        .tracking-manager .tab-button.active {
+            color: #007bff;
+        }
+
+        .tracking-manager .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #007bff;
+        }
+
+        .tracking-manager .tab-content {
+            display: none;
+        }
+
+        .tracking-manager .tab-content.active {
+            display: block;
+        }
+
+        .tracking-manager .form-group {
+            margin-bottom: 15px;
+        }
+
+        .tracking-manager label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .tracking-manager input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .tracking-manager .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tracking-manager-status {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .tracking-manager-status h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        .tracking-manager-status ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tracking-manager-status li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tracking-manager-status span {
+            font-style: italic;
+            color: #999;
+        }
+    </style>
+
+    <!-- Tracking Manager JS -->
+    <script>
+        // Tracking Manager for Analytics Testing Playground
+        (function () {
+            // Initialize tracking manager after DOM is fully loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                initTrackingManager();
+            });
+
+            function initTrackingManager() {
+                // Insert tracking management UI after header
+                insertTrackingManagerUI();
+
+                // Load previously saved tracking configurations
+                loadTrackingConfigurations();
+
+                // Initialize event listeners
+                initEventListeners();
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                }
+
+                // Initialize dataLayer if it doesn't exist
+                if (typeof dataLayer === 'undefined') {
+                    window.dataLayer = window.dataLayer || [];
+                }
+            }
+
+            function insertTrackingManagerUI() {
+                const header = document.querySelector('header');
+                if (!header) return;
+
+                const trackingManagerHTML = `
+                <div id="tracking-manager" class="tracking-manager">
+                    <div class="tracking-manager-header">
+                        <h2>Tracking Manager</h2>
+                        <button id="toggle-tracking-manager" class="btn tertiary">Toggle</button>
+                    </div>
+                    <div class="tracking-manager-content">
+                        <div class="tabs">
+                            <div class="tab-nav">
+                                <button class="tab-button active" data-tab="tab-gtm">Google Tag Manager</button>
+                                <button class="tab-button" data-tab="tab-ga">Google Analytics</button>
+                                <button class="tab-button" data-tab="tab-adobe">Adobe Launch</button>
+                            </div>
+                            <div class="tab-content active" id="tab-gtm">
+                                <form id="gtm-form">
+                                    <div class="form-group">
+                                        <label for="gtm-container-id">GTM Container ID:</label>
+                                        <input type="text" id="gtm-container-id" name="gtmContainerId" placeholder="GTM-XXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GTM Container</button>
+                                        <button type="button" id="remove-gtm" class="btn secondary">Remove GTM</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-ga">
+                                <form id="ga-form">
+                                    <div class="form-group">
+                                        <label for="ga-measurement-id">GA4 Measurement ID:</label>
+                                        <input type="text" id="ga-measurement-id" name="gaMeasurementId" placeholder="G-XXXXXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GA4 Measurement</button>
+                                        <button type="button" id="remove-ga" class="btn secondary">Remove GA</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-adobe">
+                                <form id="adobe-form">
+                                    <div class="form-group">
+                                        <label for="adobe-launch-url">Adobe Launch Script URL:</label>
+                                        <input type="text" id="adobe-launch-url" name="adobeLaunchUrl" placeholder="//assets.adobedtm.com/...">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply Adobe Launch</button>
+                                        <button type="button" id="remove-adobe" class="btn secondary">Remove Adobe</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="tracking-manager-status">
+                            <h3>Active Tracking Solutions:</h3>
+                            <ul id="active-tracking">
+                                <li id="gtm-status">Google Tag Manager: <span>Not configured</span></li>
+                                <li id="ga-status">Google Analytics: <span>Not configured</span></li>
+                                <li id="adobe-status">Adobe Launch: <span>Not configured</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                // Create the tracking manager element
+                const trackingManager = document.createElement('div');
+                trackingManager.innerHTML = trackingManagerHTML;
+
+                // Insert after header
+                header.parentNode.insertBefore(trackingManager, header.nextSibling);
+            }
+
+            function initEventListeners() {
+                // Toggle tracking manager visibility
+                const toggleButton = document.getElementById('toggle-tracking-manager');
+                if (toggleButton) {
+                    toggleButton.addEventListener('click', function () {
+                        const content = document.querySelector('.tracking-manager-content');
+                        if (content) {
+                            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                // Tab functionality
+                const tabButtons = document.querySelectorAll('.tracking-manager .tab-button');
+                const tabContents = document.querySelectorAll('.tracking-manager .tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const tabId = this.getAttribute('data-tab');
+
+                        // Deactivate all tabs
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Activate clicked tab
+                        this.classList.add('active');
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+
+                // GTM form submission
+                const gtmForm = document.getElementById('gtm-form');
+                if (gtmForm) {
+                    gtmForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const containerId = document.getElementById('gtm-container-id').value.trim();
+                        if (containerId) {
+                            applyGTMContainer(containerId);
+                            saveTrackingConfiguration('gtm', containerId);
+                        }
+                    });
+                }
+
+                // GA form submission
+                const gaForm = document.getElementById('ga-form');
+                if (gaForm) {
+                    gaForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const measurementId = document.getElementById('ga-measurement-id').value.trim();
+                        if (measurementId) {
+                            applyGAMeasurement(measurementId);
+                            saveTrackingConfiguration('ga', measurementId);
+                        }
+                    });
+                }
+
+                // Adobe form submission
+                const adobeForm = document.getElementById('adobe-form');
+                if (adobeForm) {
+                    adobeForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const launchUrl = document.getElementById('adobe-launch-url').value.trim();
+                        if (launchUrl) {
+                            applyAdobeLaunch(launchUrl);
+                            saveTrackingConfiguration('adobe', launchUrl);
+                        }
+                    });
+                }
+
+                // Remove buttons
+                const removeGTM = document.getElementById('remove-gtm');
+                if (removeGTM) {
+                    removeGTM.addEventListener('click', function () {
+                        removeTrackingTool('gtm');
+                    });
+                }
+
+                const removeGA = document.getElementById('remove-ga');
+                if (removeGA) {
+                    removeGA.addEventListener('click', function () {
+                        removeTrackingTool('ga');
+                    });
+                }
+
+                const removeAdobe = document.getElementById('remove-adobe');
+                if (removeAdobe) {
+                    removeAdobe.addEventListener('click', function () {
+                        removeTrackingTool('adobe');
+                    });
+                }
+            }
+
+            function applyGTMContainer(containerId) {
+                // Remove existing GTM if any
+                removeScriptById('gtm-script');
+                removeScriptById('gtm-noscript');
+
+                // Add GTM script to head
+                const gtmScript = document.createElement('script');
+                gtmScript.id = 'gtm-script';
+                gtmScript.innerHTML = `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${containerId}');
+            `;
+                document.head.appendChild(gtmScript);
+
+                // Add GTM noscript to body
+                const gtmNoscript = document.createElement('noscript');
+                gtmNoscript.id = 'gtm-noscript';
+                gtmNoscript.innerHTML = `
+                <iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+            `;
+                document.body.insertBefore(gtmNoscript, document.body.firstChild);
+
+                // Update status
+                updateTrackingStatus('gtm', containerId);
+            }
+
+            function applyGAMeasurement(measurementId) {
+                // Remove existing GA if any
+                removeScriptById('ga-script');
+
+                // Add GA script to head
+                const gaScript = document.createElement('script');
+                gaScript.id = 'ga-script';
+                gaScript.async = true;
+                gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+                document.head.appendChild(gaScript);
+
+                // Add GA configuration script
+                const gaConfigScript = document.createElement('script');
+                gaConfigScript.id = 'ga-config-script';
+                gaConfigScript.innerHTML = `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${measurementId}');
+            `;
+                document.head.appendChild(gaConfigScript);
+
+                // Update status
+                updateTrackingStatus('ga', measurementId);
+            }
+
+            function applyAdobeLaunch(launchUrl) {
+                // Remove existing Adobe if any
+                removeScriptById('adobe-script');
+
+                // Add Adobe Launch script to head
+                const adobeScript = document.createElement('script');
+                adobeScript.id = 'adobe-script';
+                adobeScript.src = launchUrl;
+                adobeScript.async = true;
+                document.head.appendChild(adobeScript);
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    const adobeDataLayerScript = document.createElement('script');
+                    adobeDataLayerScript.id = 'adobe-datalayer-script';
+                    adobeDataLayerScript.innerHTML = `
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                `;
+                    document.head.insertBefore(adobeDataLayerScript, adobeScript);
+                }
+
+                // Update status
+                updateTrackingStatus('adobe', launchUrl);
+            }
+
+            function removeTrackingTool(tool) {
+                switch (tool) {
+                    case 'gtm':
+                        removeScriptById('gtm-script');
+                        removeScriptById('gtm-noscript');
+                        updateTrackingStatus('gtm', null);
+                        break;
+                    case 'ga':
+                        removeScriptById('ga-script');
+                        removeScriptById('ga-config-script');
+                        updateTrackingStatus('ga', null);
+                        break;
+                    case 'adobe':
+                        removeScriptById('adobe-script');
+                        removeScriptById('adobe-datalayer-script');
+                        updateTrackingStatus('adobe', null);
+                        break;
+                }
+
+                // Remove from local storage
+                removeTrackingConfiguration(tool);
+            }
+
+            function removeScriptById(id) {
+                const script = document.getElementById(id);
+                if (script) {
+                    script.parentNode.removeChild(script);
+                }
+            }
+
+            function updateTrackingStatus(tool, value) {
+                const statusElement = document.getElementById(`${tool}-status`);
+                if (statusElement) {
+                    const statusText = statusElement.querySelector('span');
+                    if (statusText) {
+                        if (value) {
+                            statusText.textContent = value;
+                            statusText.style.color = 'green';
+                        } else {
+                            statusText.textContent = 'Not configured';
+                            statusText.style.color = '';
+                        }
+                    }
+                }
+            }
+
+            function saveTrackingConfiguration(tool, value) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                configurations[tool] = value;
+                localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+            }
+
+            function removeTrackingConfiguration(tool) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                if (configurations[tool]) {
+                    delete configurations[tool];
+                    localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+                }
+            }
+
+            function loadTrackingConfigurations() {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+
+                // Apply saved configurations
+                if (configurations.gtm) {
+                    document.getElementById('gtm-container-id').value = configurations.gtm;
+                    applyGTMContainer(configurations.gtm);
+                }
+
+                if (configurations.ga) {
+                    document.getElementById('ga-measurement-id').value = configurations.ga;
+                    applyGAMeasurement(configurations.ga);
+                }
+
+                if (configurations.adobe) {
+                    document.getElementById('adobe-launch-url').value = configurations.adobe;
+                    applyAdobeLaunch(configurations.adobe);
+                }
+            }
+        })();
+
+        // Enhanced tracking function that sends events to all configured tracking tools
+        window.trackEvent = function (category, action, label) {
+            // Check if analytics cookies are accepted
+            const cookiePreferences = JSON.parse(localStorage.getItem('cookiePreferences') || '{"essential":true,"analytics":false,"marketing":false}');
+
+            if (!cookiePreferences.analytics) {
+                console.log('Analytics tracking disabled by user preferences');
+                return;
+            }
+
+            // Log the event to console (for debugging)
+            console.log('Track Event:', { category, action, label });
+
+            // Google Analytics via gtag
+            if (typeof gtag === 'function') {
+                gtag('event', action, {
+                    'event_category': category,
+                    'event_label': label
+                });
+            }
+
+            // Google Tag Manager via dataLayer
+            if (typeof dataLayer !== 'undefined') {
+                dataLayer.push({
+                    'event': 'custom_event',
+                    'event_category': category,
+                    'event_action': action,
+                    'event_label': label
+                });
+            }
+
+            // Adobe Analytics via Adobe Client Data Layer
+            if (typeof adobeDataLayer !== 'undefined') {
+                adobeDataLayer.push({
+                    'event': 'custom_event',
+                    'eventInfo': {
+                        'category': category,
+                        'action': action,
+                        'label': label
+                    }
+                });
+            }
+        };
+    </script>
+</head>
+
+<body>
+    <!-- Add your Tag Manager noscript here -->
+
+    <header>
+        <nav>
+            <div class="logo">Analytics Testing Playground</div>
+            <ul class="nav-links">
+                <li><a href="../index.html" data-nav-item="home">Home</a></li>
+                <li><a href="products.html" data-nav-item="products">Products</a></li>
+                <li><a href="forms.html" data-nav-item="forms">Forms</a></li>
+                <li><a href="media.html" data-nav-item="media">Media</a></li>
+                <li><a href="interactive.html" data-nav-item="interactive">Interactive</a></li>
+                <li><a href="checkout.html" data-nav-item="checkout">Checkout</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <h1>Form Testing</h1>
+            <p>Test various form implementations and tracking.</p>
+        </section>
+
+        <section class="form-section">
+            <h2>Contact Form</h2>
+            <p>A standard contact form with various field types:</p>
+
+            <form id="contact-form" class="contact-form">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="contact-name">Full Name:</label>
+                            <input type="text" id="contact-name" name="name" required>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="contact-email">Email Address:</label>
+                            <input type="email" id="contact-email" name="email" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="contact-phone">Phone Number:</label>
+                            <input type="tel" id="contact-phone" name="phone">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="contact-subject">Subject:</label>
+                            <select id="contact-subject" name="subject" required>
+                                <option value="">Select a subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="support">Technical Support</option>
+                                <option value="feedback">Feedback</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="contact-message">Message:</label>
+                    <textarea id="contact-message" name="message" required></textarea>
+                </div>
+
+                <div class="form-group checkbox">
+                    <input type="checkbox" id="contact-consent" name="consent" required>
+                    <label for="contact-consent">I agree to the <a href="#" data-modal="privacy-modal"
+                            class="modal-trigger">privacy policy</a>.</label>
+                </div>
+
+                <button type="submit" class="btn primary">Submit</button>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Multi-Step Form</h2>
+            <p>A multi-step form to test progression tracking:</p>
+
+            <form id="multi-step-form" class="contact-form">
+                <!-- Step 1 -->
+                <div class="form-step" data-step="1">
+                    <h3>Step 1: Personal Information</h3>
+
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="ms-first-name">First Name:</label>
+                                <input type="text" id="ms-first-name" name="firstName" required>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="ms-last-name">Last Name:</label>
+                                <input type="text" id="ms-last-name" name="lastName" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ms-email">Email Address:</label>
+                        <input type="email" id="ms-email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ms-phone">Phone Number:</label>
+                        <input type="tel" id="ms-phone" name="phone">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn primary next-step">Next Step</button>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="form-step" data-step="2" style="display: none;">
+                    <h3>Step 2: Address Information</h3>
+
+                    <div class="form-group">
+                        <label for="ms-address">Street Address:</label>
+                        <input type="text" id="ms-address" name="address" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="ms-city">City:</label>
+                                <input type="text" id="ms-city" name="city" required>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="ms-state">State/Province:</label>
+                                <input type="text" id="ms-state" name="state" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="ms-zip">ZIP/Postal Code:</label>
+                                <input type="text" id="ms-zip" name="zip" required>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="ms-country">Country:</label>
+                                <select id="ms-country" name="country" required>
+                                    <option value="">Select a country</option>
+                                    <option value="US">United States</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="UK">United Kingdom</option>
+                                    <option value="AU">Australia</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary prev-step">Previous Step</button>
+                        <button type="button" class="btn primary next-step">Next Step</button>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="form-step" data-step="3" style="display: none;">
+                    <h3>Step 3: Additional Information</h3>
+
+                    <div class="form-group">
+                        <label for="ms-how-heard">How did you hear about us?</label>
+                        <select id="ms-how-heard" name="howHeard">
+                            <option value="">Select an option</option>
+                            <option value="search">Search Engine</option>
+                            <option value="social">Social Media</option>
+                            <option value="friend">Friend or Colleague</option>
+                            <option value="ad">Advertisement</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Interests (select all that apply):</label>
+                        <div class="checkbox-group">
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="ms-interest-1" name="interests" value="technology">
+                                <label for="ms-interest-1">Technology</label>
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="ms-interest-2" name="interests" value="sports">
+                                <label for="ms-interest-2">Sports</label>
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="ms-interest-3" name="interests" value="music">
+                                <label for="ms-interest-3">Music</label>
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="ms-interest-4" name="interests" value="travel">
+                                <label for="ms-interest-4">Travel</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ms-comments">Additional Comments:</label>
+                        <textarea id="ms-comments" name="comments"></textarea>
+                    </div>
+
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="ms-newsletter" name="newsletter">
+                        <label for="ms-newsletter">Subscribe to our newsletter</label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary prev-step">Previous Step</button>
+                        <button type="submit" class="btn primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Search Form</h2>
+            <p>A simple search form to test search tracking:</p>
+
+            <form id="search-form" class="search-form">
+                <div class="search-container">
+                    <input type="text" id="search-input" name="search" placeholder="Search for anything..." required>
+                    <button type="submit" class="search-button">Search</button>
+                </div>
+
+                <div class="search-filters">
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="search-filter-1" name="filter" value="products">
+                        <label for="search-filter-1">Products</label>
+                    </div>
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="search-filter-2" name="filter" value="articles">
+                        <label for="search-filter-2">Articles</label>
+                    </div>
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="search-filter-3" name="filter" value="support">
+                        <label for="search-filter-3">Support</label>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Login Form</h2>
+            <p>A login form to test authentication tracking:</p>
+
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email Address:</label>
+                    <input type="email" id="login-email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+
+                <div class="form-group checkbox">
+                    <input type="checkbox" id="remember-me" name="remember">
+                    <label for="remember-me">Remember me</label>
+                </div>
+
+                <button type="submit" class="btn primary">Log In</button>
+
+                <div class="form-links">
+                    <a href="#" class="form-link">Forgot Password?</a>
+                    <a href="#" class="form-link">Create Account</a>
+                </div>
+
+                <div class="social-login">
+                    <p>Or log in with:</p>
+                    <div class="social-buttons">
+                        <button type="button" class="social-button" data-provider="google">Google</button>
+                        <button type="button" class="social-button" data-provider="facebook">Facebook</button>
+                        <button type="button" class="social-button" data-provider="twitter">Twitter</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Subscription Form</h2>
+            <p>A form to test subscription and payment tracking:</p>
+
+            <form id="subscription-form" class="subscription-form">
+                <div class="subscription-options">
+                    <div class="subscription-option">
+                        <input type="radio" id="sub-basic" name="subscription" value="basic" checked>
+                        <label for="sub-basic" class="subscription-label">
+                            <div class="subscription-name">Basic</div>
+                            <div class="subscription-price">$9.99/month</div>
+                            <div class="subscription-features">
+                                <ul>
+                                    <li>Access to basic features</li>
+                                    <li>Limited storage</li>
+                                    <li>Standard support</li>
+                                </ul>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="subscription-option">
+                        <input type="radio" id="sub-pro" name="subscription" value="pro">
+                        <label for="sub-pro" class="subscription-label">
+                            <div class="subscription-name">Pro</div>
+                            <div class="subscription-price">$19.99/month</div>
+                            <div class="subscription-features">
+                                <ul>
+                                    <li>Access to all features</li>
+                                    <li>Unlimited storage</li>
+                                    <li>Priority support</li>
+                                    <li>Advanced analytics</li>
+                                </ul>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="subscription-option">
+                        <input type="radio" id="sub-team" name="subscription" value="team">
+                        <label for="sub-team" class="subscription-label">
+                            <div class="subscription-name">Team</div>
+                            <div class="subscription-price">$49.99/month</div>
+                            <div class="subscription-features">
+                                <ul>
+                                    <li>Everything in Pro</li>
+                                    <li>Team collaboration tools</li>
+                                    <li>Admin dashboard</li>
+                                    <li>24/7 dedicated support</li>
+                                </ul>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="billing-options">
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="annual-billing" name="annualBilling">
+                        <label for="annual-billing">Annual billing (save 20%)</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn primary">Continue to Payment</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Analytics Testing Playground</h3>
+                <p>A project for testing web analytics implementations.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="../index.html" data-footer-link="home">Home</a></li>
+                    <li><a href="products.html" data-footer-link="products">Products</a></li>
+                    <li><a href="forms.html" data-footer-link="forms">Forms</a></li>
+                    <li><a href="media.html" data-footer-link="media">Media</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>External Links</h3>
+                <ul>
+                    <li><a href="https://www.google.com/analytics/" target="_blank"
+                            data-external-link="google-analytics">Google Analytics</a></li>
+                    <li><a href="https://tagmanager.google.com/" target="_blank" data-external-link="gtm">Google Tag
+                            Manager</a></li>
+                    <li><a href="https://analytics.google.com/" target="_blank" data-external-link="ga4">Google
+                            Analytics 4</a></li>
+                    <li><a href="https://www.adobe.com/analytics/adobe-analytics.html" target="_blank"
+                            data-external-link="adobe">Adobe Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Analytics Testing Playground. For testing purposes only.</p>
+        </div>
+    </footer>
+
+    <div class="modal" id="privacy-modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <h3>Privacy Policy</h3>
+            </div>
+            <div class="modal-body">
+                <p>This is a sample privacy policy for the Analytics Testing Playground.</p>
+                <p>In a real implementation, this would contain detailed information about how user data is collected,
+                    processed, and stored.</p>
+                <p>For this testing environment, no actual data is being collected or stored outside of your local
+                    browser storage.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn primary modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Contact form submission
+            const contactForm = document.getElementById('contact-form');
+            if (contactForm) {
+                contactForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    // Simulate form submission
+                    console.log('Contact form submitted');
+
+                    // Track form submission
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('form', 'submit', 'contact_form');
+                    }
+
+                    // Show confirmation
+                    alert('Contact form submitted successfully! This is a test environment, so no actual data has been sent.');
+
+                    // Reset form
+                    this.reset();
+                });
+            }
+
+            // Multi-step form navigation
+            const multiStepForm = document.getElementById('multi-step-form');
+            if (multiStepForm) {
+                const nextButtons = multiStepForm.querySelectorAll('.next-step');
+                const prevButtons = multiStepForm.querySelectorAll('.prev-step');
+                const formSteps = multiStepForm.querySelectorAll('.form-step');
+
+                nextButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const currentStep = this.closest('.form-step');
+                        const currentStepNum = parseInt(currentStep.getAttribute('data-step'));
+                        const nextStep = multiStepForm.querySelector(`.form-step[data-step="${currentStepNum + 1}"]`);
+
+                        if (nextStep) {
+                            // Hide current step
+                            currentStep.style.display = 'none';
+
+                            // Show next step
+                            nextStep.style.display = 'block';
+
+                            // Track step progression
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('multi_step_form', 'next_step', `Step ${currentStepNum + 1}`);
+                            }
+                        }
+                    });
+                });
+
+                prevButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const currentStep = this.closest('.form-step');
+                        const currentStepNum = parseInt(currentStep.getAttribute('data-step'));
+                        const prevStep = multiStepForm.querySelector(`.form-step[data-step="${currentStepNum - 1}"]`);
+
+                        if (prevStep) {
+                            // Hide current step
+                            currentStep.style.display = 'none';
+
+                            // Show previous step
+                            prevStep.style.display = 'block';
+
+                            // Track step regression
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('multi_step_form', 'prev_step', `Step ${currentStepNum - 1}`);
+                            }
+                        }
+                    });
+                });
+
+                // Form submission
+                multiStepForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    // Simulate form submission
+                    console.log('Multi-step form submitted');
+
+                    // Track form submission
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('form', 'submit', 'multi_step_form');
+                    }
+
+                    // Show confirmation
+                    alert('Form submitted successfully! This is a test environment, so no actual data has been sent.');
+
+                    // Reset form and go back to first step
+                    this.reset();
+                    formSteps.forEach((step, index) => {
+                        step.style.display = index === 0 ? 'block' : 'none';
+                    });
+                });
+            }
+
+            // Search form
+            const searchForm = document.getElementById('search-form');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const searchTerm = document.getElementById('search-input').value;
+                    const filters = Array.from(this.querySelectorAll('input[name="filter"]:checked'))
+                        .map(filter => filter.value);
+
+                    // Simulate search
+                    console.log('Search submitted:', { searchTerm, filters });
+
+                    // Track search
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('search', 'submit', searchTerm);
+
+                        if (filters.length > 0) {
+                            trackEvent('search', 'filter', filters.join(','));
+                        }
+                    }
+
+                    // Show results (in a real app, this would fetch and display results)
+                    alert(`Search for "${searchTerm}" submitted! This is a test environment, so no actual search is performed.`);
+                });
+            }
+
+            // Login form
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const email = document.getElementById('login-email').value;
+
+                    // Simulate login
+                    console.log('Login attempted:', { email });
+
+                    // Track login attempt
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('auth', 'login_attempt', 'form');
+                    }
+
+                    // Show confirmation
+                    alert('Login successful! This is a test environment, so no actual authentication has occurred.');
+
+                    // Reset form
+                    this.reset();
+                });
+
+                // Social login buttons
+                const socialButtons = document.querySelectorAll('.social-button');
+                socialButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const provider = this.getAttribute('data-provider');
+
+                        // Simulate social login
+                        console.log('Social login attempted:', { provider });
+
+                        // Track social login attempt
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('auth', 'login_attempt', provider);
+                        }
+
+                        // Show confirmation
+                        alert(`${provider} login initiated! This is a test environment, so no actual authentication has occurred.`);
+                    });
+                });
+            }
+
+            // Subscription form
+            const subscriptionForm = document.getElementById('subscription-form');
+            if (subscriptionForm) {
+                subscriptionForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const subscription = document.querySelector('input[name="subscription"]:checked').value;
+                    const annualBilling = document.getElementById('annual-billing').checked;
+
+                    // Simulate subscription
+                    console.log('Subscription selected:', { subscription, annualBilling });
+
+                    // Track subscription selection
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('subscription', 'select_plan', subscription);
+
+                        if (annualBilling) {
+                            trackEvent('subscription', 'billing_option', 'annual');
+                        } else {
+                            trackEvent('subscription', 'billing_option', 'monthly');
+                        }
+                    }
+
+                    // Show confirmation
+                    alert(`You've selected the ${subscription} plan with ${annualBilling ? 'annual' : 'monthly'} billing. This is a test environment, so no actual subscription has been processed.`);
+                });
+
+                // Track subscription option changes
+                const subscriptionOptions = document.querySelectorAll('input[name="subscription"]');
+                subscriptionOptions.forEach(option => {
+                    option.addEventListener('change', function () {
+                        if (this.checked) {
+                            const plan = this.value;
+
+                            // Track plan selection
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('subscription', 'change_plan', plan);
+                            }
+                        }
+                    });
+                });
+
+                // Track billing option changes
+                const annualBillingCheckbox = document.getElementById('annual-billing');
+                if (annualBillingCheckbox) {
+                    annualBillingCheckbox.addEventListener('change', function () {
+                        const billingType = this.checked ? 'annual' : 'monthly';
+
+                        // Track billing type change
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('subscription', 'change_billing', billingType);
+                        }
+                    });
+                }
+            }
+
+            // Modal functionality
+            const modalTriggers = document.querySelectorAll('.modal-trigger');
+            modalTriggers.forEach(trigger => {
+                trigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const modalId = this.getAttribute('data-modal');
+                    const modal = document.getElementById(modalId);
+
+                    if (modal) {
+                        modal.classList.add('active');
+
+                        // Track modal open
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('modal', 'open', modalId);
+                        }
+                    }
+                });
+            });
+
+            const modalCloseButtons = document.querySelectorAll('.modal-close');
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const modal = this.closest('.modal');
+                    modal.classList.remove('active');
+
+                    // Track modal close
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('modal', 'close', modal.id);
+                    }
+                });
+            });
+
+            // Close modal when clicking outside
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+
+                        // Track modal close
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('modal', 'close_outside', this.id);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    <script src="../scripts/main.js"></script>
+</body>
+
+</html>

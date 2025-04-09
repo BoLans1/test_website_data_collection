@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Elements - Analytics Testing Playground</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <!-- Tracking Manager CSS -->
+    <style>
+        /* Tracking Manager Styles */
+        .tracking-manager {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px auto;
+            max-width: 1200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .tracking-manager-header {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tracking-manager-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .tracking-manager-content {
+            padding: 20px;
+        }
+
+        .tracking-manager .tabs {
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #6c757d;
+            position: relative;
+        }
+
+        .tracking-manager .tab-button.active {
+            color: #007bff;
+        }
+
+        .tracking-manager .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #007bff;
+        }
+
+        .tracking-manager .tab-content {
+            display: none;
+        }
+
+        .tracking-manager .tab-content.active {
+            display: block;
+        }
+
+        .tracking-manager .form-group {
+            margin-bottom: 15px;
+        }
+
+        .tracking-manager label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .tracking-manager input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .tracking-manager .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tracking-manager-status {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .tracking-manager-status h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        .tracking-manager-status ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tracking-manager-status li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tracking-manager-status span {
+            font-style: italic;
+            color: #999;
+        }
+    </style>
+
+    <!-- Tracking Manager JS -->
+    <script>
+        // Tracking Manager for Analytics Testing Playground
+        (function () {
+            // Initialize tracking manager after DOM is fully loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                initTrackingManager();
+            });
+
+            function initTrackingManager() {
+                // Insert tracking management UI after header
+                insertTrackingManagerUI();
+
+                // Load previously saved tracking configurations
+                loadTrackingConfigurations();
+
+                // Initialize event listeners
+                initEventListeners();
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                }
+
+                // Initialize dataLayer if it doesn't exist
+                if (typeof dataLayer === 'undefined') {
+                    window.dataLayer = window.dataLayer || [];
+                }
+            }
+
+            function insertTrackingManagerUI() {
+                const header = document.querySelector('header');
+                if (!header) return;
+
+                const trackingManagerHTML = `
+                <div id="tracking-manager" class="tracking-manager">
+                    <div class="tracking-manager-header">
+                        <h2>Tracking Manager</h2>
+                        <button id="toggle-tracking-manager" class="btn tertiary">Toggle</button>
+                    </div>
+                    <div class="tracking-manager-content">
+                        <div class="tabs">
+                            <div class="tab-nav">
+                                <button class="tab-button active" data-tab="tab-gtm">Google Tag Manager</button>
+                                <button class="tab-button" data-tab="tab-ga">Google Analytics</button>
+                                <button class="tab-button" data-tab="tab-adobe">Adobe Launch</button>
+                            </div>
+                            <div class="tab-content active" id="tab-gtm">
+                                <form id="gtm-form">
+                                    <div class="form-group">
+                                        <label for="gtm-container-id">GTM Container ID:</label>
+                                        <input type="text" id="gtm-container-id" name="gtmContainerId" placeholder="GTM-XXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GTM Container</button>
+                                        <button type="button" id="remove-gtm" class="btn secondary">Remove GTM</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-ga">
+                                <form id="ga-form">
+                                    <div class="form-group">
+                                        <label for="ga-measurement-id">GA4 Measurement ID:</label>
+                                        <input type="text" id="ga-measurement-id" name="gaMeasurementId" placeholder="G-XXXXXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GA4 Measurement</button>
+                                        <button type="button" id="remove-ga" class="btn secondary">Remove GA</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-adobe">
+                                <form id="adobe-form">
+                                    <div class="form-group">
+                                        <label for="adobe-launch-url">Adobe Launch Script URL:</label>
+                                        <input type="text" id="adobe-launch-url" name="adobeLaunchUrl" placeholder="//assets.adobedtm.com/...">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply Adobe Launch</button>
+                                        <button type="button" id="remove-adobe" class="btn secondary">Remove Adobe</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="tracking-manager-status">
+                            <h3>Active Tracking Solutions:</h3>
+                            <ul id="active-tracking">
+                                <li id="gtm-status">Google Tag Manager: <span>Not configured</span></li>
+                                <li id="ga-status">Google Analytics: <span>Not configured</span></li>
+                                <li id="adobe-status">Adobe Launch: <span>Not configured</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                // Create the tracking manager element
+                const trackingManager = document.createElement('div');
+                trackingManager.innerHTML = trackingManagerHTML;
+
+                // Insert after header
+                header.parentNode.insertBefore(trackingManager, header.nextSibling);
+            }
+
+            function initEventListeners() {
+                // Toggle tracking manager visibility
+                const toggleButton = document.getElementById('toggle-tracking-manager');
+                if (toggleButton) {
+                    toggleButton.addEventListener('click', function () {
+                        const content = document.querySelector('.tracking-manager-content');
+                        if (content) {
+                            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                // Tab functionality
+                const tabButtons = document.querySelectorAll('.tracking-manager .tab-button');
+                const tabContents = document.querySelectorAll('.tracking-manager .tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const tabId = this.getAttribute('data-tab');
+
+                        // Deactivate all tabs
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Activate clicked tab
+                        this.classList.add('active');
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+
+                // GTM form submission
+                const gtmForm = document.getElementById('gtm-form');
+                if (gtmForm) {
+                    gtmForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const containerId = document.getElementById('gtm-container-id').value.trim();
+                        if (containerId) {
+                            applyGTMContainer(containerId);
+                            saveTrackingConfiguration('gtm', containerId);
+                        }
+                    });
+                }
+
+                // GA form submission
+                const gaForm = document.getElementById('ga-form');
+                if (gaForm) {
+                    gaForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const measurementId = document.getElementById('ga-measurement-id').value.trim();
+                        if (measurementId) {
+                            applyGAMeasurement(measurementId);
+                            saveTrackingConfiguration('ga', measurementId);
+                        }
+                    });
+                }
+
+                // Adobe form submission
+                const adobeForm = document.getElementById('adobe-form');
+                if (adobeForm) {
+                    adobeForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const launchUrl = document.getElementById('adobe-launch-url').value.trim();
+                        if (launchUrl) {
+                            applyAdobeLaunch(launchUrl);
+                            saveTrackingConfiguration('adobe', launchUrl);
+                        }
+                    });
+                }
+
+                // Remove buttons
+                const removeGTM = document.getElementById('remove-gtm');
+                if (removeGTM) {
+                    removeGTM.addEventListener('click', function () {
+                        removeTrackingTool('gtm');
+                    });
+                }
+
+                const removeGA = document.getElementById('remove-ga');
+                if (removeGA) {
+                    removeGA.addEventListener('click', function () {
+                        removeTrackingTool('ga');
+                    });
+                }
+
+                const removeAdobe = document.getElementById('remove-adobe');
+                if (removeAdobe) {
+                    removeAdobe.addEventListener('click', function () {
+                        removeTrackingTool('adobe');
+                    });
+                }
+            }
+
+            function applyGTMContainer(containerId) {
+                // Remove existing GTM if any
+                removeScriptById('gtm-script');
+                removeScriptById('gtm-noscript');
+
+                // Add GTM script to head
+                const gtmScript = document.createElement('script');
+                gtmScript.id = 'gtm-script';
+                gtmScript.innerHTML = `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${containerId}');
+            `;
+                document.head.appendChild(gtmScript);
+
+                // Add GTM noscript to body
+                const gtmNoscript = document.createElement('noscript');
+                gtmNoscript.id = 'gtm-noscript';
+                gtmNoscript.innerHTML = `
+                <iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+            `;
+                document.body.insertBefore(gtmNoscript, document.body.firstChild);
+
+                // Update status
+                updateTrackingStatus('gtm', containerId);
+            }
+
+            function applyGAMeasurement(measurementId) {
+                // Remove existing GA if any
+                removeScriptById('ga-script');
+
+                // Add GA script to head
+                const gaScript = document.createElement('script');
+                gaScript.id = 'ga-script';
+                gaScript.async = true;
+                gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+                document.head.appendChild(gaScript);
+
+                // Add GA configuration script
+                const gaConfigScript = document.createElement('script');
+                gaConfigScript.id = 'ga-config-script';
+                gaConfigScript.innerHTML = `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${measurementId}');
+            `;
+                document.head.appendChild(gaConfigScript);
+
+                // Update status
+                updateTrackingStatus('ga', measurementId);
+            }
+
+            function applyAdobeLaunch(launchUrl) {
+                // Remove existing Adobe if any
+                removeScriptById('adobe-script');
+
+                // Add Adobe Launch script to head
+                const adobeScript = document.createElement('script');
+                adobeScript.id = 'adobe-script';
+                adobeScript.src = launchUrl;
+                adobeScript.async = true;
+                document.head.appendChild(adobeScript);
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    const adobeDataLayerScript = document.createElement('script');
+                    adobeDataLayerScript.id = 'adobe-datalayer-script';
+                    adobeDataLayerScript.innerHTML = `
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                `;
+                    document.head.insertBefore(adobeDataLayerScript, adobeScript);
+                }
+
+                // Update status
+                updateTrackingStatus('adobe', launchUrl);
+            }
+
+            function removeTrackingTool(tool) {
+                switch (tool) {
+                    case 'gtm':
+                        removeScriptById('gtm-script');
+                        removeScriptById('gtm-noscript');
+                        updateTrackingStatus('gtm', null);
+                        break;
+                    case 'ga':
+                        removeScriptById('ga-script');
+                        removeScriptById('ga-config-script');
+                        updateTrackingStatus('ga', null);
+                        break;
+                    case 'adobe':
+                        removeScriptById('adobe-script');
+                        removeScriptById('adobe-datalayer-script');
+                        updateTrackingStatus('adobe', null);
+                        break;
+                }
+
+                // Remove from local storage
+                removeTrackingConfiguration(tool);
+            }
+
+            function removeScriptById(id) {
+                const script = document.getElementById(id);
+                if (script) {
+                    script.parentNode.removeChild(script);
+                }
+            }
+
+            function updateTrackingStatus(tool, value) {
+                const statusElement = document.getElementById(`${tool}-status`);
+                if (statusElement) {
+                    const statusText = statusElement.querySelector('span');
+                    if (statusText) {
+                        if (value) {
+                            statusText.textContent = value;
+                            statusText.style.color = 'green';
+                        } else {
+                            statusText.textContent = 'Not configured';
+                            statusText.style.color = '';
+                        }
+                    }
+                }
+            }
+
+            function saveTrackingConfiguration(tool, value) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                configurations[tool] = value;
+                localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+            }
+
+            function removeTrackingConfiguration(tool) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                if (configurations[tool]) {
+                    delete configurations[tool];
+                    localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+                }
+            }
+
+            function loadTrackingConfigurations() {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+
+                // Apply saved configurations
+                if (configurations.gtm) {
+                    document.getElementById('gtm-container-id').value = configurations.gtm;
+                    applyGTMContainer(configurations.gtm);
+                }
+
+                if (configurations.ga) {
+                    document.getElementById('ga-measurement-id').value = configurations.ga;
+                    applyGAMeasurement(configurations.ga);
+                }
+
+                if (configurations.adobe) {
+                    document.getElementById('adobe-launch-url').value = configurations.adobe;
+                    applyAdobeLaunch(configurations.adobe);
+                }
+            }
+        })();
+
+        // Enhanced tracking function that sends events to all configured tracking tools
+        window.trackEvent = function (category, action, label) {
+            // Check if analytics cookies are accepted
+            const cookiePreferences = JSON.parse(localStorage.getItem('cookiePreferences') || '{"essential":true,"analytics":false,"marketing":false}');
+
+            if (!cookiePreferences.analytics) {
+                console.log('Analytics tracking disabled by user preferences');
+                return;
+            }
+
+            // Log the event to console (for debugging)
+            console.log('Track Event:', { category, action, label });
+
+            // Google Analytics via gtag
+            if (typeof gtag === 'function') {
+                gtag('event', action, {
+                    'event_category': category,
+                    'event_label': label
+                });
+            }
+
+            // Google Tag Manager via dataLayer
+            if (typeof dataLayer !== 'undefined') {
+                dataLayer.push({
+                    'event': 'custom_event',
+                    'event_category': category,
+                    'event_action': action,
+                    'event_label': label
+                });
+            }
+
+            // Adobe Analytics via Adobe Client Data Layer
+            if (typeof adobeDataLayer !== 'undefined') {
+                adobeDataLayer.push({
+                    'event': 'custom_event',
+                    'eventInfo': {
+                        'category': category,
+                        'action': action,
+                        'label': label
+                    }
+                });
+            }
+        };
+    </script>
+</head>
+
+<body>
+    <!-- Add your Tag Manager noscript here -->
+
+    <header>
+        <nav>
+            <div class="logo">Analytics Testing Playground</div>
+            <ul class="nav-links">
+                <li><a href="../index.html" data-nav-item="home">Home</a></li>
+                <li><a href="products.html" data-nav-item="products">Products</a></li>
+                <li><a href="forms.html" data-nav-item="forms">Forms</a></li>
+                <li><a href="media.html" data-nav-item="media">Media</a></li>
+                <li><a href="interactive.html" data-nav-item="interactive">Interactive</a></li>
+                <li><a href="checkout.html" data-nav-item="checkout">Checkout</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <h1>Interactive Elements</h1>
+            <p>Test various interactive elements and tracking implementations.</p>
+        </section>
+
+        <div class="interactive-elements">
+            <!-- Tabs -->
+            <div class="interactive-card">
+                <h3>Tabs</h3>
+                <div class="tabs">
+                    <div class="tab-nav">
+                        <button class="tab-button active" data-tab="tab1">Tab 1</button>
+                        <button class="tab-button" data-tab="tab2">Tab 2</button>
+                        <button class="tab-button" data-tab="tab3">Tab 3</button>
+                    </div>
+                    <div class="tab-content active" id="tab1">
+                        <p>This is the content for Tab 1. You can track when users switch between tabs.</p>
+                        <button class="btn primary">Action Button</button>
+                    </div>
+                    <div class="tab-content" id="tab2">
+                        <p>This is the content for Tab 2. Each tab can contain different elements.</p>
+                        <div class="form-group">
+                            <input type="text" placeholder="Type something here...">
+                        </div>
+                    </div>
+                    <div class="tab-content" id="tab3">
+                        <p>This is the content for Tab 3. Track engagement with each tab separately.</p>
+                        <a href="#" class="btn secondary">Learn More</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accordion -->
+            <div class="interactive-card">
+                <h3>Accordion</h3>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h4>Accordion Item 1</h4>
+                            <div class="accordion-icon">▼</div>
+                        </div>
+                        <div class="accordion-content">
+                            <p>This is the content for accordion item 1. Accordions are great for FAQs and other
+                                expandable content.</p>
+                            <p>You can track when users expand or collapse each item.</p>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h4>Accordion Item 2</h4>
+                            <div class="accordion-icon">▼</div>
+                        </div>
+                        <div class="accordion-content">
+                            <p>This is the content for accordion item 2. Each accordion item can contain different
+                                elements.</p>
+                            <button class="btn primary">Action Button</button>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h4>Accordion Item 3</h4>
+                            <div class="accordion-icon">▼</div>
+                        </div>
+                        <div class="accordion-content">
+                            <p>This is the content for accordion item 3. Track which items users engage with most.</p>
+                            <a href="#" class="btn secondary">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toggles and Switches -->
+            <div class="interactive-card">
+                <h3>Toggles and Switches</h3>
+
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <label>Enable Feature 1</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle1" data-feature="feature1">
+                            <label for="toggle1"></label>
+                        </div>
+                    </div>
+
+                    <div class="toggle-item">
+                        <label>Enable Feature 2</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle2" data-feature="feature2">
+                            <label for="toggle2"></label>
+                        </div>
+                    </div>
+
+                    <div class="toggle-item">
+                        <label>Enable Feature 3</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle3" data-feature="feature3">
+                            <label for="toggle3"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature-preview">
+                    <p>Toggle the switches above to see how they can be tracked.</p>
+                </div>
+            </div>
+
+            <!-- Range Sliders -->
+            <div class="interactive-card">
+                <h3>Range Sliders</h3>
+
+                <div class="range-slider">
+                    <label for="price-range">Price Range:</label>
+                    <input type="range" id="price-range" name="price" min="0" max="1000" value="500">
+                    <div class="range-value">$500</div>
+                </div>
+
+                <div class="range-slider">
+                    <label for="quantity-range">Quantity:</label>
+                    <input type="range" id="quantity-range" name="quantity" min="1" max="100" value="10">
+                    <div class="range-value">10</div>
+                </div>
+
+                <div class="range-slider">
+                    <label for="rating-range">Rating:</label>
+                    <input type="range" id="rating-range" name="rating" min="1" max="5" value="4" step="0.5">
+                    <div class="range-value">4.0</div>
+                </div>
+            </div>
+
+            <!-- Star Rating -->
+            <div class="interactive-card">
+                <h3>Star Rating</h3>
+
+                <div class="rating-container">
+                    <p>Rate this product:</p>
+                    <div class="star-rating" data-product-id="prod-001">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <div class="rating-feedback"></div>
+                </div>
+            </div>
+
+            <!-- Color Picker -->
+            <div class="interactive-card">
+                <h3>Color Selection</h3>
+
+                <div class="color-picker">
+                    <p>Choose a color:</p>
+                    <div class="color-options" data-product-id="prod-003">
+                        <div class="color-option" style="background-color: #FF0000;" data-color="Red"></div>
+                        <div class="color-option" style="background-color: #0000FF;" data-color="Blue"></div>
+                        <div class="color-option" style="background-color: #008000;" data-color="Green"></div>
+                        <div class="color-option" style="background-color: #FFFF00;" data-color="Yellow"></div>
+                        <div class="color-option" style="background-color: #000000;" data-color="Black"></div>
+                        <div class="color-option" style="background-color: #FFFFFF; border: 1px solid #ddd;"
+                            data-color="White"></div>
+                    </div>
+                    <div class="color-feedback">No color selected</div>
+                </div>
+            </div>
+
+            <!-- Quantity Selector -->
+            <div class="interactive-card">
+                <h3>Quantity Selector</h3>
+
+                <div class="quantity-container">
+                    <p>Select quantity:</p>
+                    <div class="quantity-selector" data-product-id="prod-002">
+                        <button class="quantity-btn minus">-</button>
+                        <input type="number" class="quantity-input" value="1" min="1">
+                        <button class="quantity-btn plus">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="interactive-card">
+                <h3>Loading Spinner</h3>
+
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                    <button class="btn primary toggle-spinner">Toggle Spinner</button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="interactive-card">
+                <h3>Progress Bar</h3>
+
+                <div class="progress-container">
+                    <div class="progress-bar-horizontal" data-value="75" data-id="demo-progress"></div>
+                </div>
+                <div class="progress-value">0%</div>
+                <button class="btn primary restart-progress">Restart Progress</button>
+            </div>
+
+            <!-- Tooltips -->
+            <div class="interactive-card">
+                <h3>Tooltips</h3>
+
+                <div class="tooltip-container">
+                    <div class="tooltip-trigger">Hover over me</div>
+                    <div class="tooltip-content">This is a tooltip that appears on hover. You can track tooltip
+                        interactions.</div>
+                </div>
+
+                <div class="tooltip-container">
+                    <div class="tooltip-trigger">Another tooltip</div>
+                    <div class="tooltip-content">This is another tooltip with different content.</div>
+                </div>
+            </div>
+
+            <!-- Modal Triggers -->
+            <div class="interactive-card">
+                <h3>Modals</h3>
+
+                <div class="modal-triggers">
+                    <button class="btn primary modal-trigger" data-modal="info-modal">Open Info Modal</button>
+                    <button class="btn secondary modal-trigger" data-modal="form-modal">Open Form Modal</button>
+                </div>
+            </div>
+
+            <!-- Drag and Drop -->
+            <div class="interactive-card">
+                <h3>Drag and Drop</h3>
+
+                <div class="drag-drop-container">
+                    <div class="drag-items">
+                        <div class="drag-item" draggable="true" data-item-id="item1">Item 1</div>
+                        <div class="drag-item" draggable="true" data-item-id="item2">Item 2</div>
+                        <div class="drag-item" draggable="true" data-item-id="item3">Item 3</div>
+                    </div>
+
+                    <div class="drop-zone" data-zone-id="zone1">
+                        <p>Drop items here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div class="modal" id="info-modal">
+            <div class="modal-content">
+                <button class="modal-close">&times;</button>
+                <div class="modal-header">
+                    <h3>Information Modal</h3>
+                </div>
+                <div class="modal-body">
+                    <p>This is an example of an information modal. You can track when users open and close modals.</p>
+                    <p>Modals are often used to display additional information or to confirm user actions.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn primary modal-close">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="form-modal">
+            <div class="modal-content">
+                <button class="modal-close">&times;</button>
+                <div class="modal-header">
+                    <h3>Form Modal</h3>
+                </div>
+                <div class="modal-body">
+                    <form id="modal-form">
+                        <div class="form-group">
+                            <label for="modal-name">Name:</label>
+                            <input type="text" id="modal-name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="modal-email">Email:</label>
+                            <input type="email" id="modal-email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="modal-message">Message:</label>
+                            <textarea id="modal-message" name="message" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn secondary modal-close">Cancel</button>
+                    <button class="btn primary" id="modal-submit">Submit</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Analytics Testing Playground</h3>
+                <p>A project for testing web analytics implementations.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="../index.html" data-footer-link="home">Home</a></li>
+                    <li><a href="products.html" data-footer-link="products">Products</a></li>
+                    <li><a href="forms.html" data-footer-link="forms">Forms</a></li>
+                    <li><a href="media.html" data-footer-link="media">Media</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>External Links</h3>
+                <ul>
+                    <li><a href="https://www.google.com/analytics/" target="_blank"
+                            data-external-link="google-analytics">Google Analytics</a></li>
+                    <li><a href="https://tagmanager.google.com/" target="_blank" data-external-link="gtm">Google Tag
+                            Manager</a></li>
+                    <li><a href="https://analytics.google.com/" target="_blank" data-external-link="ga4">Google
+                            Analytics 4</a></li>
+                    <li><a href="https://www.adobe.com/analytics/adobe-analytics.html" target="_blank"
+                            data-external-link="adobe">Adobe Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Analytics Testing Playground. For testing purposes only.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Tab functionality
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const tabId = this.getAttribute('data-tab');
+
+                    // Remove active class from all buttons and contents
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // Add active class to clicked button and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+
+                    // Track tab change
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('tabs', 'change', tabId);
+                    }
+                });
+            });
+
+            // Accordion functionality
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function () {
+                    const accordionItem = this.parentElement;
+                    const isActive = accordionItem.classList.contains('active');
+
+                    // Close all accordion items
+                    document.querySelectorAll('.accordion-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+
+                    // If the clicked item wasn't active, open it
+                    if (!isActive) {
+                        accordionItem.classList.add('active');
+
+                        // Track accordion open
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('accordion', 'open', this.querySelector('h4').textContent);
+                        }
+                    } else {
+                        // Track accordion close
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('accordion', 'close', this.querySelector('h4').textContent);
+                        }
+                    }
+                });
+            });
+
+            // Toggle switches
+            const toggleSwitches = document.querySelectorAll('.toggle-switch input[type="checkbox"]');
+
+            toggleSwitches.forEach(toggle => {
+                toggle.addEventListener('change', function () {
+                    const feature = this.getAttribute('data-feature');
+                    const isEnabled = this.checked;
+
+                    // Track toggle change
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('toggle', isEnabled ? 'enable' : 'disable', feature);
+                    }
+
+                    // Update feature preview
+                    const featurePreview = document.querySelector('.feature-preview');
+                    if (featurePreview) {
+                        featurePreview.innerHTML = `<p>Feature "${feature}" is now ${isEnabled ? 'enabled' : 'disabled'}.</p>`;
+                    }
+                });
+            });
+
+            // Range sliders
+            const rangeSliders = document.querySelectorAll('input[type="range"]');
+
+            rangeSliders.forEach(slider => {
+                const valueDisplay = slider.nextElementSibling;
+
+                // Update value display on input
+                slider.addEventListener('input', function () {
+                    let value = this.value;
+
+                    // Format value based on the slider type
+                    if (this.id === 'price-range') {
+                        value = '$' + value;
+                    } else if (this.id === 'rating-range') {
+                        value = parseFloat(value).toFixed(1);
+                    }
+
+                    valueDisplay.textContent = value;
+                });
+
+                // Track final value when user stops sliding
+                slider.addEventListener('change', function () {
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('range_slider', 'change', `${this.name}: ${this.value}`);
+                    }
+                });
+            });
+
+            // Star rating
+            const stars = document.querySelectorAll('.star');
+
+            stars.forEach(star => {
+                // Hover effect
+                star.addEventListener('mouseover', function () {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    const starRating = this.closest('.star-rating');
+                    const stars = starRating.querySelectorAll('.star');
+
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+
+                star.addEventListener('mouseout', function () {
+                    const starRating = this.closest('.star-rating');
+                    const stars = starRating.querySelectorAll('.star');
+
+                    stars.forEach(s => {
+                        if (!s.classList.contains('selected')) {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+
+                // Click to rate
+                star.addEventListener('click', function () {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    const starRating = this.closest('.star-rating');
+                    const stars = starRating.querySelectorAll('.star');
+                    const productId = starRating.getAttribute('data-product-id');
+                    const feedbackElement = starRating.nextElementSibling;
+
+                    // Remove all selected and active states
+                    stars.forEach(s => {
+                        s.classList.remove('selected');
+                        s.classList.remove('active');
+                    });
+
+                    // Add selected state to clicked star and all before it
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.classList.add('selected');
+                            s.classList.add('active');
+                        }
+                    });
+
+                    // Update feedback
+                    if (feedbackElement) {
+                        feedbackElement.textContent = `You rated this ${rating} star${rating !== 1 ? 's' : ''}!`;
+                    }
+
+                    // Track rating
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('star_rating', 'rate', `${productId}: ${rating} stars`);
+                    }
+                });
+            });
+
+            // Color options
+            const colorOptions = document.querySelectorAll('.color-option');
+
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    const colorOptions = this.closest('.color-options');
+                    const options = colorOptions.querySelectorAll('.color-option');
+                    const productId = colorOptions.getAttribute('data-product-id');
+                    const color = this.getAttribute('data-color');
+                    const feedbackElement = colorOptions.nextElementSibling;
+
+                    // Remove selected class from all options
+                    options.forEach(opt => opt.classList.remove('selected'));
+
+                    // Add selected class to clicked option
+                    this.classList.add('selected');
+
+                    // Update feedback
+                    if (feedbackElement) {
+                        feedbackElement.textContent = `Selected color: ${color}`;
+                    }
+
+                    // Track color selection
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('color_selection', 'select', `${productId}: ${color}`);
+                    }
+                });
+            });
+
+            // Quantity selector
+            const minusButtons = document.querySelectorAll('.quantity-btn.minus');
+            const plusButtons = document.querySelectorAll('.quantity-btn.plus');
+            const quantityInputs = document.querySelectorAll('.quantity-input');
+
+            minusButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const quantitySelector = this.closest('.quantity-selector');
+                    const input = quantitySelector.querySelector('.quantity-input');
+                    const productId = quantitySelector.getAttribute('data-product-id');
+
+                    let value = parseInt(input.value);
+                    if (value > 1) {
+                        input.value = value - 1;
+
+                        // Track quantity decrease
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('quantity_selector', 'decrease', `${productId}: ${input.value}`);
+                        }
+                    }
+                });
+            });
+
+            plusButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const quantitySelector = this.closest('.quantity-selector');
+                    const input = quantitySelector.querySelector('.quantity-input');
+                    const productId = quantitySelector.getAttribute('data-product-id');
+
+                    let value = parseInt(input.value);
+                    input.value = value + 1;
+
+                    // Track quantity increase
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('quantity_selector', 'increase', `${productId}: ${input.value}`);
+                    }
+                });
+            });
+
+            quantityInputs.forEach(input => {
+                input.addEventListener('change', function () {
+                    const quantitySelector = this.closest('.quantity-selector');
+                    const productId = quantitySelector.getAttribute('data-product-id');
+
+                    let value = parseInt(this.value);
+                    if (value < 1) {
+                        this.value = 1;
+                    }
+
+                    // Track quantity manual change
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('quantity_selector', 'manual_change', `${productId}: ${this.value}`);
+                    }
+                });
+            });
+
+            // Loading spinner
+            const toggleSpinnerButton = document.querySelector('.toggle-spinner');
+            const spinner = document.querySelector('.spinner');
+
+            if (toggleSpinnerButton && spinner) {
+                toggleSpinnerButton.addEventListener('click', function () {
+                    const isVisible = spinner.style.display !== 'none';
+
+                    if (isVisible) {
+                        spinner.style.display = 'none';
+                    } else {
+                        spinner.style.display = 'block';
+                    }
+
+                    // Track spinner toggle
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('spinner', isVisible ? 'hide' : 'show', 'demo-spinner');
+                    }
+                });
+            }
+
+            // Progress bar
+            const progressBar = document.querySelector('.progress-bar-horizontal');
+            const progressValue = document.querySelector('.progress-value');
+            const restartProgressButton = document.querySelector('.restart-progress');
+
+            if (progressBar && progressValue && restartProgressButton) {
+                const targetValue = parseInt(progressBar.getAttribute('data-value'));
+                const progressId = progressBar.getAttribute('data-id');
+
+                // Initialize progress animation
+                animateProgress(0, targetValue);
+
+                restartProgressButton.addEventListener('click', function () {
+                    // Reset and restart progress animation
+                    progressBar.style.width = '0%';
+                    progressValue.textContent = '0%';
+
+                    // Track progress restart
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('progress_bar', 'restart', progressId);
+                    }
+
+                    // Restart animation
+                    animateProgress(0, targetValue);
+                });
+
+                function animateProgress(current, target) {
+                    if (current <= target) {
+                        progressBar.style.width = `${current}%`;
+                        progressValue.textContent = `${current}%`;
+
+                        setTimeout(() => {
+                            animateProgress(current + 1, target);
+                        }, 50);
+                    } else {
+                        // Track progress complete
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('progress_bar', 'complete', `${progressId}: ${target}%`);
+                        }
+                    }
+                }
+            }
+
+            // Modal functionality
+            const modalTriggers = document.querySelectorAll('.modal-trigger');
+
+            modalTriggers.forEach(trigger => {
+                trigger.addEventListener('click', function () {
+                    const modalId = this.getAttribute('data-modal');
+                    const modal = document.getElementById(modalId);
+
+                    if (modal) {
+                        modal.classList.add('active');
+
+                        // Track modal open
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('modal', 'open', modalId);
+                        }
+                    }
+                });
+            });
+
+            const modalCloseButtons = document.querySelectorAll('.modal-close');
+
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const modal = this.closest('.modal');
+                    modal.classList.remove('active');
+
+                    // Track modal close
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('modal', 'close', modal.id);
+                    }
+                });
+            });
+
+            // Close modal when clicking outside
+            const modals = document.querySelectorAll('.modal');
+
+            modals.forEach(modal => {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+
+                        // Track modal close
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('modal', 'close_outside', this.id);
+                        }
+                    }
+                });
+            });
+
+            // Modal form submission
+            const modalSubmitButton = document.getElementById('modal-submit');
+
+            if (modalSubmitButton) {
+                modalSubmitButton.addEventListener('click', function () {
+                    const modalForm = document.getElementById('modal-form');
+
+                    if (modalForm) {
+                        // Check if form is valid
+                        if (modalForm.checkValidity()) {
+                            // Simulate form submission
+                            console.log('Modal form submitted');
+
+                            // Track form submission
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('form', 'submit', 'modal_form');
+                            }
+
+                            // Close modal
+                            const modal = this.closest('.modal');
+                            modal.classList.remove('active');
+
+                            // Show confirmation
+                            alert('Form submitted successfully! This is a test environment, so no actual data has been sent.');
+
+                            // Reset form
+                            modalForm.reset();
+                        } else {
+                            // Trigger form validation
+                            const submitButton = document.createElement('button');
+                            submitButton.type = 'submit';
+                            modalForm.appendChild(submitButton);
+                            submitButton.click();
+                            modalForm.removeChild(submitButton);
+
+                            // Track form validation error
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('form', 'validation_error', 'modal_form');
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Drag and drop functionality
+            const dragItems = document.querySelectorAll('.drag-item');
+            const dropZones = document.querySelectorAll('.drop-zone');
+
+            dragItems.forEach(item => {
+                item.addEventListener('dragstart', function (e) {
+                    e.dataTransfer.setData('text/plain', this.getAttribute('data-item-id'));
+                    this.classList.add('dragging');
+
+                    // Track drag start
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('drag_drop', 'drag_start', this.getAttribute('data-item-id'));
+                    }
+                });
+
+                item.addEventListener('dragend', function () {
+                    this.classList.remove('dragging');
+                });
+            });
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    this.classList.add('drag-over');
+                });
+
+                zone.addEventListener('dragleave', function () {
+                    this.classList.remove('drag-over');
+                });
+
+                zone.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const item = document.querySelector(`.drag-item[data-item-id="${itemId}"]`);
+                    const zoneId = this.getAttribute('data-zone-id');
+
+                    if (item) {
+                        // Move item to drop zone
+                        this.appendChild(item);
+
+                        // Track drop
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('drag_drop', 'drop', `${itemId} -> ${zoneId}`);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    <script src="../scripts/main.js"></script>
+</body>
+
+</html>

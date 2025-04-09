@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Analytics Testing Playground</title>
+    <script>
+        // Initialize dataLayer immediately at the top of the page
+        window.dataLayer = window.dataLayer || [];
+
+        // Add diagnostic push to verify dataLayer is working
+        window.dataLayer.push({
+            'event': 'page_init',
+            'page_type': document.title || 'unknown'
+        });
+
+        // Override trackEvent function to provide visibility
+        var originalTrackEvent;
+
+        // Add the override after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Store original trackEvent function if it exists
+            if (window.trackEvent) {
+                originalTrackEvent = window.trackEvent;
+            }
+
+            // Create a diagnostic version that will show us exactly what's happening
+            window.trackEvent = function (category, action, label) {
+                console.log('🔍 DEBUG: trackEvent called with:', { category, action, label });
+
+                // Always push to dataLayer regardless of cookie settings
+                console.log('🔍 DEBUG: Pushing to dataLayer...');
+                window.dataLayer.push({
+                    'event': 'custom_event',
+                    'event_category': category,
+                    'event_action': action,
+                    'event_label': label
+                });
+                console.log('🔍 DEBUG: dataLayer after push:', JSON.parse(JSON.stringify(window.dataLayer)));
+
+                // Call original function if it existed
+                if (originalTrackEvent) {
+                    console.log('🔍 DEBUG: Calling original trackEvent...');
+                    originalTrackEvent(category, action, label);
+                }
+            };
+
+            console.log('🔍 DEBUG: trackEvent function overridden for diagnostics');
+            console.log('🔍 DEBUG: Current dataLayer:', JSON.parse(JSON.stringify(window.dataLayer)));
+        });
+    </script>
+
+
+    <link rel="stylesheet" href="../styles/main.css">
+    <!-- Tracking Manager CSS -->
+    <style>
+        /* Tracking Manager Styles */
+        .tracking-manager {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px auto;
+            max-width: 1200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .tracking-manager-header {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tracking-manager-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .tracking-manager-content {
+            padding: 20px;
+        }
+
+        .tracking-manager .tabs {
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #6c757d;
+            position: relative;
+        }
+
+        .tracking-manager .tab-button.active {
+            color: #007bff;
+        }
+
+        .tracking-manager .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #007bff;
+        }
+
+        .tracking-manager .tab-content {
+            display: none;
+        }
+
+        .tracking-manager .tab-content.active {
+            display: block;
+        }
+
+        .tracking-manager .form-group {
+            margin-bottom: 15px;
+        }
+
+        .tracking-manager label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .tracking-manager input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .tracking-manager .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tracking-manager-status {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .tracking-manager-status h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        .tracking-manager-status ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tracking-manager-status li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tracking-manager-status span {
+            font-style: italic;
+            color: #999;
+        }
+    </style>
+
+    <!-- Tracking Manager JS -->
+    <script>
+        // Tracking Manager for Analytics Testing Playground
+        (function () {
+            // Initialize tracking manager after DOM is fully loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                initTrackingManager();
+            });
+
+            function initTrackingManager() {
+                // Insert tracking management UI after header
+                insertTrackingManagerUI();
+
+                // Load previously saved tracking configurations
+                loadTrackingConfigurations();
+
+                // Initialize event listeners
+                initEventListeners();
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                }
+
+                // Initialize dataLayer if it doesn't exist
+                if (typeof dataLayer === 'undefined') {
+                    window.dataLayer = window.dataLayer || [];
+                }
+            }
+
+            function insertTrackingManagerUI() {
+                const header = document.querySelector('header');
+                if (!header) return;
+
+                const trackingManagerHTML = `
+                <div id="tracking-manager" class="tracking-manager">
+                    <div class="tracking-manager-header">
+                        <h2>Tracking Manager</h2>
+                        <button id="toggle-tracking-manager" class="btn tertiary">Toggle</button>
+                    </div>
+                    <div class="tracking-manager-content">
+                        <div class="tabs">
+                            <div class="tab-nav">
+                                <button class="tab-button active" data-tab="tab-gtm">Google Tag Manager</button>
+                                <button class="tab-button" data-tab="tab-ga">Google Analytics</button>
+                                <button class="tab-button" data-tab="tab-adobe">Adobe Launch</button>
+                            </div>
+                            <div class="tab-content active" id="tab-gtm">
+                                <form id="gtm-form">
+                                    <div class="form-group">
+                                        <label for="gtm-container-id">GTM Container ID:</label>
+                                        <input type="text" id="gtm-container-id" name="gtmContainerId" placeholder="GTM-XXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GTM Container</button>
+                                        <button type="button" id="remove-gtm" class="btn secondary">Remove GTM</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-ga">
+                                <form id="ga-form">
+                                    <div class="form-group">
+                                        <label for="ga-measurement-id">GA4 Measurement ID:</label>
+                                        <input type="text" id="ga-measurement-id" name="gaMeasurementId" placeholder="G-XXXXXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GA4 Measurement</button>
+                                        <button type="button" id="remove-ga" class="btn secondary">Remove GA</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-adobe">
+                                <form id="adobe-form">
+                                    <div class="form-group">
+                                        <label for="adobe-launch-url">Adobe Launch Script URL:</label>
+                                        <input type="text" id="adobe-launch-url" name="adobeLaunchUrl" placeholder="//assets.adobedtm.com/...">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply Adobe Launch</button>
+                                        <button type="button" id="remove-adobe" class="btn secondary">Remove Adobe</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="tracking-manager-status">
+                            <h3>Active Tracking Solutions:</h3>
+                            <ul id="active-tracking">
+                                <li id="gtm-status">Google Tag Manager: <span>Not configured</span></li>
+                                <li id="ga-status">Google Analytics: <span>Not configured</span></li>
+                                <li id="adobe-status">Adobe Launch: <span>Not configured</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                // Create the tracking manager element
+                const trackingManager = document.createElement('div');
+                trackingManager.innerHTML = trackingManagerHTML;
+
+                // Insert after header
+                header.parentNode.insertBefore(trackingManager, header.nextSibling);
+            }
+
+            function initEventListeners() {
+                // Toggle tracking manager visibility
+                const toggleButton = document.getElementById('toggle-tracking-manager');
+                if (toggleButton) {
+                    toggleButton.addEventListener('click', function () {
+                        const content = document.querySelector('.tracking-manager-content');
+                        if (content) {
+                            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                // Tab functionality
+                const tabButtons = document.querySelectorAll('.tracking-manager .tab-button');
+                const tabContents = document.querySelectorAll('.tracking-manager .tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const tabId = this.getAttribute('data-tab');
+
+                        // Deactivate all tabs
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Activate clicked tab
+                        this.classList.add('active');
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+
+                // GTM form submission
+                const gtmForm = document.getElementById('gtm-form');
+                if (gtmForm) {
+                    gtmForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const containerId = document.getElementById('gtm-container-id').value.trim();
+                        if (containerId) {
+                            applyGTMContainer(containerId);
+                            saveTrackingConfiguration('gtm', containerId);
+                        }
+                    });
+                }
+
+                // GA form submission
+                const gaForm = document.getElementById('ga-form');
+                if (gaForm) {
+                    gaForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const measurementId = document.getElementById('ga-measurement-id').value.trim();
+                        if (measurementId) {
+                            applyGAMeasurement(measurementId);
+                            saveTrackingConfiguration('ga', measurementId);
+                        }
+                    });
+                }
+
+                // Adobe form submission
+                const adobeForm = document.getElementById('adobe-form');
+                if (adobeForm) {
+                    adobeForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const launchUrl = document.getElementById('adobe-launch-url').value.trim();
+                        if (launchUrl) {
+                            applyAdobeLaunch(launchUrl);
+                            saveTrackingConfiguration('adobe', launchUrl);
+                        }
+                    });
+                }
+
+                // Remove buttons
+                const removeGTM = document.getElementById('remove-gtm');
+                if (removeGTM) {
+                    removeGTM.addEventListener('click', function () {
+                        removeTrackingTool('gtm');
+                    });
+                }
+
+                const removeGA = document.getElementById('remove-ga');
+                if (removeGA) {
+                    removeGA.addEventListener('click', function () {
+                        removeTrackingTool('ga');
+                    });
+                }
+
+                const removeAdobe = document.getElementById('remove-adobe');
+                if (removeAdobe) {
+                    removeAdobe.addEventListener('click', function () {
+                        removeTrackingTool('adobe');
+                    });
+                }
+            }
+
+            function applyGTMContainer(containerId) {
+                // Remove existing GTM if any
+                removeScriptById('gtm-script');
+                removeScriptById('gtm-noscript');
+
+                // Add GTM script to head
+                const gtmScript = document.createElement('script');
+                gtmScript.id = 'gtm-script';
+                gtmScript.innerHTML = `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${containerId}');
+            `;
+                document.head.appendChild(gtmScript);
+
+                // Add GTM noscript to body
+                const gtmNoscript = document.createElement('noscript');
+                gtmNoscript.id = 'gtm-noscript';
+                gtmNoscript.innerHTML = `
+                <iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+            `;
+                document.body.insertBefore(gtmNoscript, document.body.firstChild);
+
+                // Update status
+                updateTrackingStatus('gtm', containerId);
+            }
+
+            function applyGAMeasurement(measurementId) {
+                // Remove existing GA if any
+                removeScriptById('ga-script');
+
+                // Add GA script to head
+                const gaScript = document.createElement('script');
+                gaScript.id = 'ga-script';
+                gaScript.async = true;
+                gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+                document.head.appendChild(gaScript);
+
+                // Add GA configuration script
+                const gaConfigScript = document.createElement('script');
+                gaConfigScript.id = 'ga-config-script';
+                gaConfigScript.innerHTML = `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${measurementId}');
+            `;
+                document.head.appendChild(gaConfigScript);
+
+                // Update status
+                updateTrackingStatus('ga', measurementId);
+            }
+
+            function applyAdobeLaunch(launchUrl) {
+                // Remove existing Adobe if any
+                removeScriptById('adobe-script');
+
+                // Add Adobe Launch script to head
+                const adobeScript = document.createElement('script');
+                adobeScript.id = 'adobe-script';
+                adobeScript.src = launchUrl;
+                adobeScript.async = true;
+                document.head.appendChild(adobeScript);
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    const adobeDataLayerScript = document.createElement('script');
+                    adobeDataLayerScript.id = 'adobe-datalayer-script';
+                    adobeDataLayerScript.innerHTML = `
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                `;
+                    document.head.insertBefore(adobeDataLayerScript, adobeScript);
+                }
+
+                // Update status
+                updateTrackingStatus('adobe', launchUrl);
+            }
+
+            function removeTrackingTool(tool) {
+                switch (tool) {
+                    case 'gtm':
+                        removeScriptById('gtm-script');
+                        removeScriptById('gtm-noscript');
+                        updateTrackingStatus('gtm', null);
+                        break;
+                    case 'ga':
+                        removeScriptById('ga-script');
+                        removeScriptById('ga-config-script');
+                        updateTrackingStatus('ga', null);
+                        break;
+                    case 'adobe':
+                        removeScriptById('adobe-script');
+                        removeScriptById('adobe-datalayer-script');
+                        updateTrackingStatus('adobe', null);
+                        break;
+                }
+
+                // Remove from local storage
+                removeTrackingConfiguration(tool);
+            }
+
+            function removeScriptById(id) {
+                const script = document.getElementById(id);
+                if (script) {
+                    script.parentNode.removeChild(script);
+                }
+            }
+
+            function updateTrackingStatus(tool, value) {
+                const statusElement = document.getElementById(`${tool}-status`);
+                if (statusElement) {
+                    const statusText = statusElement.querySelector('span');
+                    if (statusText) {
+                        if (value) {
+                            statusText.textContent = value;
+                            statusText.style.color = 'green';
+                        } else {
+                            statusText.textContent = 'Not configured';
+                            statusText.style.color = '';
+                        }
+                    }
+                }
+            }
+
+            function saveTrackingConfiguration(tool, value) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                configurations[tool] = value;
+                localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+            }
+
+            function removeTrackingConfiguration(tool) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                if (configurations[tool]) {
+                    delete configurations[tool];
+                    localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+                }
+            }
+
+            function loadTrackingConfigurations() {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+
+                // Apply saved configurations
+                if (configurations.gtm) {
+                    document.getElementById('gtm-container-id').value = configurations.gtm;
+                    applyGTMContainer(configurations.gtm);
+                }
+
+                if (configurations.ga) {
+                    document.getElementById('ga-measurement-id').value = configurations.ga;
+                    applyGAMeasurement(configurations.ga);
+                }
+
+                if (configurations.adobe) {
+                    document.getElementById('adobe-launch-url').value = configurations.adobe;
+                    applyAdobeLaunch(configurations.adobe);
+                }
+            }
+        })();
+
+        // Enhanced tracking function that sends events to all configured tracking tools
+        window.trackEvent = function (category, action, label) {
+            // Check if analytics cookies are accepted
+            const cookiePreferences = JSON.parse(localStorage.getItem('cookiePreferences') || '{"essential":true,"analytics":false,"marketing":false}');
+
+            if (!cookiePreferences.analytics) {
+                console.log('Analytics tracking disabled by user preferences');
+                return;
+            }
+
+            // Log the event to console (for debugging)
+            console.log('Track Event:', { category, action, label });
+
+            // Google Analytics via gtag
+            if (typeof gtag === 'function') {
+                gtag('event', action, {
+                    'event_category': category,
+                    'event_label': label
+                });
+            }
+
+            // Google Tag Manager via dataLayer
+            if (typeof dataLayer !== 'undefined') {
+                dataLayer.push({
+                    'event': 'custom_event',
+                    'event_category': category,
+                    'event_action': action,
+                    'event_label': label
+                });
+            }
+
+            // Adobe Analytics via Adobe Client Data Layer
+            if (typeof adobeDataLayer !== 'undefined') {
+                adobeDataLayer.push({
+                    'event': 'custom_event',
+                    'eventInfo': {
+                        'category': category,
+                        'action': action,
+                        'label': label
+                    }
+                });
+            }
+        };
+    </script>
+</head>
+
+<body>
+    <!-- Add your Tag Manager noscript here -->
+
+    <header>
+        <nav>
+            <div class="logo">Analytics Testing Playground</div>
+            <ul class="nav-links">
+                <li><a href="../index.html" data-nav-item="home">Home</a></li>
+                <li><a href="products.html" data-nav-item="products">Products</a></li>
+                <li><a href="forms.html" data-nav-item="forms">Forms</a></li>
+                <li><a href="media.html" data-nav-item="media">Media</a></li>
+                <li><a href="interactive.html" data-nav-item="interactive">Interactive</a></li>
+                <li><a href="checkout.html" data-nav-item="checkout">Checkout</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <h1>Checkout</h1>
+            <p>Test checkout flow and e-commerce tracking.</p>
+        </section>
+
+        <div class="checkout-container">
+            <div class="checkout-form-container">
+                <div class="checkout-steps">
+                    <div class="checkout-step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Information</div>
+                    </div>
+                    <div class="checkout-step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Shipping</div>
+                    </div>
+                    <div class="checkout-step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Payment</div>
+                    </div>
+                    <div class="checkout-step" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Review</div>
+                    </div>
+                </div>
+
+                <form class="checkout-form">
+                    <!-- Step 1: Customer Information -->
+                    <div class="checkout-section" data-step="1">
+                        <h2>Customer Information</h2>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="first-name">First Name:</label>
+                                    <input type="text" id="first-name" name="firstName" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="last-name">Last Name:</label>
+                                    <input type="text" id="last-name" name="lastName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address:</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number:</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn primary continue-btn" data-next-step="2">Continue to
+                                Shipping</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Shipping Information -->
+                    <div class="checkout-section" data-step="2" style="display: none;">
+                        <h2>Shipping Information</h2>
+
+                        <div class="form-group">
+                            <label for="address">Street Address:</label>
+                            <input type="text" id="address" name="address" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address2">Apartment, suite, etc. (optional):</label>
+                            <input type="text" id="address2" name="address2">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="city">City:</label>
+                                    <input type="text" id="city" name="city" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="state">State/Province:</label>
+                                    <input type="text" id="state" name="state" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="zip">ZIP/Postal Code:</label>
+                                    <input type="text" id="zip" name="zip" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="country">Country:</label>
+                                    <select id="country" name="country" required>
+                                        <option value="">Select a country</option>
+                                        <option value="US">United States</option>
+                                        <option value="CA">Canada</option>
+                                        <option value="UK">United Kingdom</option>
+                                        <option value="AU">Australia</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="shipping-options">
+                            <h3>Shipping Method</h3>
+
+                            <div class="shipping-option">
+                                <input type="radio" id="shipping-standard" name="shippingMethod" value="standard"
+                                    checked>
+                                <label for="shipping-standard">
+                                    <div class="shipping-option-info">
+                                        <div class="shipping-option-name">Standard Shipping</div>
+                                        <div class="shipping-option-description">3-5 business days</div>
+                                    </div>
+                                    <div class="shipping-option-price">$5.99</div>
+                                </label>
+                            </div>
+
+                            <div class="shipping-option">
+                                <input type="radio" id="shipping-express" name="shippingMethod" value="express">
+                                <label for="shipping-express">
+                                    <div class="shipping-option-info">
+                                        <div class="shipping-option-name">Express Shipping</div>
+                                        <div class="shipping-option-description">1-2 business days</div>
+                                    </div>
+                                    <div class="shipping-option-price">$12.99</div>
+                                </label>
+                            </div>
+
+                            <div class="shipping-option">
+                                <input type="radio" id="shipping-overnight" name="shippingMethod" value="overnight">
+                                <label for="shipping-overnight">
+                                    <div class="shipping-option-info">
+                                        <div class="shipping-option-name">Overnight Shipping</div>
+                                        <div class="shipping-option-description">Next business day</div>
+                                    </div>
+                                    <div class="shipping-option-price">$24.99</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn secondary back-btn" data-prev-step="1">Back</button>
+                            <button type="button" class="btn primary continue-btn" data-next-step="3">Continue to
+                                Payment</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Payment Information -->
+                    <div class="checkout-section" data-step="3" style="display: none;">
+                        <h2>Payment Information</h2>
+
+                        <div class="payment-methods">
+                            <div class="payment-method">
+                                <input type="radio" id="payment-credit" name="paymentMethod" value="credit" checked>
+                                <label for="payment-credit">Credit Card</label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment-paypal" name="paymentMethod" value="paypal">
+                                <label for="payment-paypal">PayPal</label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment-apple" name="paymentMethod" value="apple">
+                                <label for="payment-apple">Apple Pay</label>
+                            </div>
+                        </div>
+
+                        <div class="payment-details" id="credit-card-details">
+                            <div class="form-group">
+                                <label for="card-number">Card Number:</label>
+                                <input type="text" id="card-number" name="cardNumber" placeholder="**** **** **** ****">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="card-expiry">Expiration Date:</label>
+                                        <input type="text" id="card-expiry" name="cardExpiry" placeholder="MM/YY">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="card-cvc">CVC:</label>
+                                        <input type="text" id="card-cvc" name="cardCvc" placeholder="***">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="card-name">Name on Card:</label>
+                                <input type="text" id="card-name" name="cardName">
+                            </div>
+                        </div>
+
+                        <div class="payment-details" id="paypal-details" style="display: none;">
+                            <p>You will be redirected to PayPal to complete your payment.</p>
+                        </div>
+
+                        <div class="payment-details" id="apple-pay-details" style="display: none;">
+                            <p>You will be prompted to complete your payment with Apple Pay.</p>
+                        </div>
+
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="save-payment" name="savePayment">
+                            <label for="save-payment">Save payment information for future purchases</label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn secondary back-btn" data-prev-step="2">Back</button>
+                            <button type="button" class="btn primary continue-btn" data-next-step="4">Review
+                                Order</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Order Review -->
+                    <div class="checkout-section" data-step="4" style="display: none;">
+                        <h2>Review Your Order</h2>
+
+                        <div class="order-review">
+                            <div class="review-section">
+                                <h3>Customer Information</h3>
+                                <div class="review-details" id="customer-review">
+                                    <!-- Will be filled with JavaScript -->
+                                </div>
+                                <button type="button" class="btn tertiary edit-btn" data-edit-step="1">Edit</button>
+                            </div>
+
+                            <div class="review-section">
+                                <h3>Shipping Information</h3>
+                                <div class="review-details" id="shipping-review">
+                                    <!-- Will be filled with JavaScript -->
+                                </div>
+                                <button type="button" class="btn tertiary edit-btn" data-edit-step="2">Edit</button>
+                            </div>
+
+                            <div class="review-section">
+                                <h3>Payment Information</h3>
+                                <div class="review-details" id="payment-review">
+                                    <!-- Will be filled with JavaScript -->
+                                </div>
+                                <button type="button" class="btn tertiary edit-btn" data-edit-step="3">Edit</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="terms" name="terms" required>
+                            <label for="terms">I agree to the <a href="#" data-modal="terms-modal"
+                                    class="modal-trigger">terms and conditions</a></label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn secondary back-btn" data-prev-step="3">Back</button>
+                            <button type="submit" class="btn primary">Complete Order</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="checkout-summary">
+                <h2>Order Summary</h2>
+
+                <div class="checkout-products">
+                    <div class="checkout-product" data-product-id="prod-001">
+                        <div class="product-image">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxpq3slfL_9AITuMpZ62OlkPRglrHZoWPoUA&s"
+                                alt="Premium Wireless Headphones">
+                        </div>
+                        <div class="product-details">
+                            <h4>Premium Wireless Headphones</h4>
+                            <div class="product-quantity">Qty: 1</div>
+                        </div>
+                        <div class="product-subtotal">$199.99</div>
+                    </div>
+
+                    <div class="checkout-product" data-product-id="prod-003">
+                        <div class="product-image">
+                            <img src="data:image/jpeg;base64,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"
+                                alt="Premium Cotton T-Shirt">
+                        </div>
+                        <div class="product-details">
+                            <h4>Premium Cotton T-Shirt</h4>
+                            <div class="product-quantity">Qty: 2</div>
+                        </div>
+                        <div class="product-subtotal">$99.98</div>
+                    </div>
+                </div>
+
+                <div class="checkout-totals">
+                    <div class="checkout-row">
+                        <div>Subtotal</div>
+                        <div>$299.97</div>
+                    </div>
+                    <div class="checkout-row">
+                        <div>Shipping</div>
+                        <div id="shipping-cost">$5.99</div>
+                    </div>
+                    <div class="checkout-row">
+                        <div>Tax</div>
+                        <div>$18.00</div>
+                    </div>
+                    <div class="checkout-row total">
+                        <div>Total</div>
+                        <div id="order-total">$323.96</div>
+                    </div>
+                </div>
+
+                <div class="promo-code">
+                    <div class="form-group">
+                        <label for="promo">Promo Code:</label>
+                        <div class="promo-input">
+                            <input type="text" id="promo" name="promo">
+                            <button type="button" class="btn secondary" id="apply-promo">Apply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Analytics Testing Playground</h3>
+                <p>A project for testing web analytics implementations.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="../index.html" data-footer-link="home">Home</a></li>
+                    <li><a href="products.html" data-footer-link="products">Products</a></li>
+                    <li><a href="forms.html" data-footer-link="forms">Forms</a></li>
+                    <li><a href="media.html" data-footer-link="media">Media</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>External Links</h3>
+                <ul>
+                    <li><a href="https://www.google.com/analytics/" target="_blank"
+                            data-external-link="google-analytics">Google Analytics</a></li>
+                    <li><a href="https://tagmanager.google.com/" target="_blank" data-external-link="gtm">Google Tag
+                            Manager</a></li>
+                    <li><a href="https://analytics.google.com/" target="_blank" data-external-link="ga4">Google
+                            Analytics 4</a></li>
+                    <li><a href="https://www.adobe.com/analytics/adobe-analytics.html" target="_blank"
+                            data-external-link="adobe">Adobe Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Analytics Testing Playground. For testing purposes only.</p>
+        </div>
+    </footer>
+
+    <div class="modal" id="terms-modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <h3>Terms and Conditions</h3>
+            </div>
+            <div class="modal-body">
+                <p>This is a sample terms and conditions document for the Analytics Testing Playground.</p>
+                <p>In a real implementation, this would contain detailed information about the terms of service, return
+                    policy, privacy policy, etc.</p>
+                <p>For this testing environment, no actual purchases are being made and no personal data is being stored
+                    outside of your local browser storage.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn primary modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Checkout step navigation
+            const continueButtons = document.querySelectorAll('.continue-btn');
+            const backButtons = document.querySelectorAll('.back-btn');
+            const editButtons = document.querySelectorAll('.edit-btn');
+            const checkoutSections = document.querySelectorAll('.checkout-section');
+
+            // Continue to next step
+            continueButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const nextStep = this.getAttribute('data-next-step');
+
+                    // Hide all sections
+                    checkoutSections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+
+                    // Show next section
+                    document.querySelector(`.checkout-section[data-step="${nextStep}"]`).style.display = 'block';
+
+                    // Update steps indicator
+                    updateCheckoutSteps(nextStep);
+
+                    // If going to review step, populate review sections
+                    if (nextStep === '4') {
+                        populateReviewSections();
+                    }
+
+                    // Track checkout step
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('checkout', 'view_step', `Step ${nextStep}`);
+                    }
+                });
+            });
+
+            // Go back to previous step
+            backButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const prevStep = this.getAttribute('data-prev-step');
+
+                    // Hide all sections
+                    checkoutSections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+
+                    // Show previous section
+                    document.querySelector(`.checkout-section[data-step="${prevStep}"]`).style.display = 'block';
+
+                    // Update steps indicator
+                    updateCheckoutSteps(prevStep);
+
+                    // Track checkout step
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('checkout', 'view_step', `Step ${prevStep}`);
+                    }
+                });
+            });
+
+            // Edit a specific step
+            editButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const editStep = this.getAttribute('data-edit-step');
+
+                    // Hide all sections
+                    checkoutSections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+
+                    // Show edit section
+                    document.querySelector(`.checkout-section[data-step="${editStep}"]`).style.display = 'block';
+
+                    // Update steps indicator
+                    updateCheckoutSteps(editStep);
+
+                    // Track edit action
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('checkout', 'edit_step', `Step ${editStep}`);
+                    }
+                });
+            });
+
+            // Update checkout steps indicator
+            function updateCheckoutSteps(currentStep) {
+                const steps = document.querySelectorAll('.checkout-step');
+
+                steps.forEach(step => {
+                    const stepNumber = step.getAttribute('data-step');
+
+                    if (stepNumber < currentStep) {
+                        step.classList.add('completed');
+                        step.classList.remove('active');
+                    } else if (stepNumber === currentStep) {
+                        step.classList.add('active');
+                        step.classList.remove('completed');
+                    } else {
+                        step.classList.remove('active');
+                        step.classList.remove('completed');
+                    }
+                });
+            }
+
+            // Populate review sections with form data
+            function populateReviewSections() {
+                // Customer information
+                const firstName = document.getElementById('first-name').value;
+                const lastName = document.getElementById('last-name').value;
+                const email = document.getElementById('email').value;
+                const phone = document.getElementById('phone').value;
+
+                document.getElementById('customer-review').innerHTML = `
+                    <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+                `;
+
+                // Shipping information
+                const address = document.getElementById('address').value;
+                const address2 = document.getElementById('address2').value;
+                const city = document.getElementById('city').value;
+                const state = document.getElementById('state').value;
+                const zip = document.getElementById('zip').value;
+                const country = document.getElementById('country').value;
+                const shippingMethod = document.querySelector('input[name="shippingMethod"]:checked').value;
+
+                document.getElementById('shipping-review').innerHTML = `
+                    <p><strong>Address:</strong> ${address}</p>
+                    ${address2 ? `<p><strong>Address 2:</strong> ${address2}</p>` : ''}
+                    <p><strong>City:</strong> ${city}</p>
+                    <p><strong>State/Province:</strong> ${state}</p>
+                    <p><strong>ZIP/Postal Code:</strong> ${zip}</p>
+                    <p><strong>Country:</strong> ${country}</p>
+                    <p><strong>Shipping Method:</strong> ${shippingMethod.charAt(0).toUpperCase() + shippingMethod.slice(1)}</p>
+                `;
+
+                // Payment information
+                const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+                let paymentDetails = '';
+
+                if (paymentMethod === 'credit') {
+                    const cardNumber = document.getElementById('card-number').value;
+                    const lastFour = cardNumber.slice(-4);
+
+                    paymentDetails = `
+                        <p><strong>Payment Method:</strong> Credit Card</p>
+                        <p><strong>Card Number:</strong> **** **** **** ${lastFour || '****'}</p>
+                    `;
+                } else {
+                    paymentDetails = `
+                        <p><strong>Payment Method:</strong> ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</p>
+                    `;
+                }
+
+                document.getElementById('payment-review').innerHTML = paymentDetails;
+            }
+
+            // Payment method selection
+            const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
+            const paymentDetails = document.querySelectorAll('.payment-details');
+
+            paymentMethods.forEach(method => {
+                method.addEventListener('change', function () {
+                    const selectedMethod = this.value;
+
+                    // Hide all payment details
+                    paymentDetails.forEach(details => {
+                        details.style.display = 'none';
+                    });
+
+                    // Show selected payment details
+                    document.getElementById(`${selectedMethod}-details`).style.display = 'block';
+
+                    // Track payment method selection
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('checkout', 'select_payment', selectedMethod);
+                    }
+                });
+            });
+
+            // Shipping method selection
+            const shippingMethods = document.querySelectorAll('input[name="shippingMethod"]');
+
+            shippingMethods.forEach(method => {
+                method.addEventListener('change', function () {
+                    const selectedMethod = this.value;
+                    let shippingCost = '0.00';
+
+                    // Update shipping cost based on selected method
+                    if (selectedMethod === 'standard') {
+                        shippingCost = '5.99';
+                    } else if (selectedMethod === 'express') {
+                        shippingCost = '12.99';
+                    } else if (selectedMethod === 'overnight') {
+                        shippingCost = '24.99';
+                    }
+
+                    // Update shipping cost display
+                    document.getElementById('shipping-cost').textContent = `$${shippingCost}`;
+
+                    // Update order total
+                    updateOrderTotal();
+
+                    // Track shipping method selection
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('checkout', 'select_shipping', selectedMethod);
+                    }
+                });
+            });
+
+            // Promo code application
+            const applyPromoButton = document.getElementById('apply-promo');
+
+            if (applyPromoButton) {
+                applyPromoButton.addEventListener('click', function () {
+                    const promoCode = document.getElementById('promo').value;
+
+                    if (promoCode) {
+                        // Simulate promo code application (10% discount)
+                        const originalTotal = 323.96;
+                        const discountAmount = (originalTotal * 0.1).toFixed(2);
+                        const newTotal = (originalTotal - discountAmount).toFixed(2);
+
+                        // Update order total
+                        document.getElementById('order-total').textContent = `$${newTotal}`;
+
+                        // Add discount row
+                        const checkoutTotals = document.querySelector('.checkout-totals');
+                        const totalRow = document.querySelector('.checkout-row.total');
+
+                        // Check if discount row already exists
+                        const existingDiscountRow = document.querySelector('.checkout-row.discount');
+
+                        if (existingDiscountRow) {
+                            existingDiscountRow.querySelector('div:last-child').textContent = `-$${discountAmount}`;
+                        } else {
+                            const discountRow = document.createElement('div');
+                            discountRow.className = 'checkout-row discount';
+                            discountRow.innerHTML = `
+                                <div>Discount (${promoCode})</div>
+                                <div>-$${discountAmount}</div>
+                            `;
+
+                            checkoutTotals.insertBefore(discountRow, totalRow);
+                        }
+
+                        // Track promo code application
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('checkout', 'apply_promo', promoCode);
+                        }
+
+                        // Show success message
+                        alert(`Promo code "${promoCode}" applied successfully! You saved $${discountAmount}.`);
+                    } else {
+                        alert('Please enter a promo code.');
+                    }
+                });
+            }
+
+            // Update order total based on shipping cost and any discounts
+            function updateOrderTotal() {
+                const subtotal = 299.97;
+                const tax = 18.00;
+                const shippingCost = parseFloat(document.getElementById('shipping-cost').textContent.replace('$', ''));
+
+                // Check for any discounts
+                const discountRow = document.querySelector('.checkout-row.discount');
+                let discount = 0;
+
+                if (discountRow) {
+                    discount = parseFloat(discountRow.querySelector('div:last-child').textContent.replace('-$', ''));
+                }
+
+                const total = (subtotal + tax + shippingCost - discount).toFixed(2);
+
+                document.getElementById('order-total').textContent = `$${total}`;
+            }
+
+            // Form submission
+            const checkoutForm = document.querySelector('.checkout-form');
+
+            if (checkoutForm) {
+                checkoutForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    // Check if terms are accepted
+                    const termsAccepted = document.getElementById('terms').checked;
+
+                    if (!termsAccepted) {
+                        alert('Please accept the terms and conditions to complete your order.');
+                        return;
+                    }
+
+                    // Simulate order completion
+                    const orderData = {
+                        products: [
+                            {
+                                id: 'prod-001',
+                                name: 'Premium Wireless Headphones',
+                                price: 199.99,
+                                quantity: 1
+                            },
+                            {
+                                id: 'prod-003',
+                                name: 'Premium Cotton T-Shirt',
+                                price: 49.99,
+                                quantity: 2
+                            }
+                        ],
+                        subtotal: 299.97,
+                        shipping: parseFloat(document.getElementById('shipping-cost').textContent.replace('$', '')),
+                        tax: 18.00,
+                        total: parseFloat(document.getElementById('order-total').textContent.replace('$', ''))
+                    };
+
+                    console.log('Order completed:', orderData);
+
+                    // Track order completion
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('checkout', 'complete_order', JSON.stringify(orderData));
+                    }
+
+                    // Show confirmation
+                    alert('Thank you for your order! This is a test environment, so no actual order has been placed.');
+
+                    // Redirect to confirmation page (in a real implementation)
+                    // window.location.href = 'confirmation.html';
+                });
+            }
+
+            // Modal functionality
+            const modalTriggers = document.querySelectorAll('.modal-trigger');
+
+            modalTriggers.forEach(trigger => {
+                trigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const modalId = this.getAttribute('data-modal');
+                    const modal = document.getElementById(modalId);
+
+                    if (modal) {
+                        modal.classList.add('active');
+
+                        // Track modal open
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('modal', 'open', modalId);
+                        }
+                    }
+                });
+            });
+
+            const modalCloseButtons = document.querySelectorAll('.modal-close');
+
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const modal = this.closest('.modal');
+                    modal.classList.remove('active');
+
+                    // Track modal close
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('modal', 'close', modal.id);
+                    }
+                });
+            });
+
+            // Close modal when clicking outside
+            const modals = document.querySelectorAll('.modal');
+
+            modals.forEach(modal => {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+
+                        // Track modal close
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('modal', 'close_outside', this.id);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    <script src="../scripts/main.js"></script>
+</body>
+
+</html>

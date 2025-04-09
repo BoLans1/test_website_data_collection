@@ -1,0 +1,121 @@
+/* Tracking Manager Styles */
+.tracking-manager {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 20px auto;
+    max-width: 1200px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+}
+
+.tracking-manager-header {
+    background-color: #e9ecef;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tracking-manager-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.tracking-manager-content {
+    padding: 20px;
+}
+
+.tracking-manager .tabs {
+    margin-bottom: 20px;
+}
+
+.tracking-manager .tab-nav {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.tracking-manager .tab-button {
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #6c757d;
+    position: relative;
+}
+
+.tracking-manager .tab-button.active {
+    color: #007bff;
+}
+
+.tracking-manager .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #007bff;
+}
+
+.tracking-manager .tab-content {
+    display: none;
+}
+
+.tracking-manager .tab-content.active {
+    display: block;
+}
+
+.tracking-manager .form-group {
+    margin-bottom: 15px;
+}
+
+.tracking-manager label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.tracking-manager input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.tracking-manager .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.tracking-manager-status {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.tracking-manager-status h3 {
+    margin-top: 0;
+    font-size: 16px;
+}
+
+.tracking-manager-status ul {
+    list-style: none;
+    padding: 0;
+}
+
+.tracking-manager-status li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.tracking-manager-status span {
+    font-style: italic;
+    color: #999;
+}

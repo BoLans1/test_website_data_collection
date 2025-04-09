@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Testing Playground</title>
+    <link rel="stylesheet" href="styles/main.css">
+ <!-- Tracking Manager CSS -->
+<style>
+    /* Tracking Manager Styles */
+    .tracking-manager {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin: 20px auto;
+        max-width: 1200px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        font-family: Arial, sans-serif;
+    }
+    
+    .tracking-manager-header {
+        background-color: #e9ecef;
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .tracking-manager-header h2 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+    }
+    
+    .tracking-manager-content {
+        padding: 20px;
+    }
+    
+    .tracking-manager .tabs {
+        margin-bottom: 20px;
+    }
+    
+    .tracking-manager .tab-nav {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+    
+    .tracking-manager .tab-button {
+        background: none;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #6c757d;
+        position: relative;
+    }
+    
+    .tracking-manager .tab-button.active {
+        color: #007bff;
+    }
+    
+    .tracking-manager .tab-button.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background-color: #007bff;
+    }
+    
+    .tracking-manager .tab-content {
+        display: none;
+    }
+    
+    .tracking-manager .tab-content.active {
+        display: block;
+    }
+    
+    .tracking-manager .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .tracking-manager label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    .tracking-manager input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .tracking-manager .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .tracking-manager-status {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+    }
+    
+    .tracking-manager-status h3 {
+        margin-top: 0;
+        font-size: 16px;
+    }
+    
+    .tracking-manager-status ul {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .tracking-manager-status li {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .tracking-manager-status span {
+        font-style: italic;
+        color: #999;
+    }
+    </style>
+    
+    <!-- Tracking Manager JS -->
+    <script>
+    // Tracking Manager for Analytics Testing Playground
+    (function() {
+        // Initialize tracking manager after DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initTrackingManager();
+        });
+    
+        function initTrackingManager() {
+            // Insert tracking management UI after header
+            insertTrackingManagerUI();
+            
+            // Load previously saved tracking configurations
+            loadTrackingConfigurations();
+            
+            // Initialize event listeners
+            initEventListeners();
+            
+            // Initialize Adobe Client Data Layer if it doesn't exist
+            if (typeof adobeDataLayer === 'undefined') {
+                window.adobeDataLayer = window.adobeDataLayer || [];
+            }
+            
+            // Initialize dataLayer if it doesn't exist
+            if (typeof dataLayer === 'undefined') {
+                window.dataLayer = window.dataLayer || [];
+            }
+        }
+    
+        function insertTrackingManagerUI() {
+            const header = document.querySelector('header');
+            if (!header) return;
+            
+            const trackingManagerHTML = `
+                <div id="tracking-manager" class="tracking-manager">
+                    <div class="tracking-manager-header">
+                        <h2>Tracking Manager</h2>
+                        <button id="toggle-tracking-manager" class="btn tertiary">Toggle</button>
+                    </div>
+                    <div class="tracking-manager-content">
+                        <div class="tabs">
+                            <div class="tab-nav">
+                                <button class="tab-button active" data-tab="tab-gtm">Google Tag Manager</button>
+                                <button class="tab-button" data-tab="tab-ga">Google Analytics</button>
+                                <button class="tab-button" data-tab="tab-adobe">Adobe Launch</button>
+                            </div>
+                            <div class="tab-content active" id="tab-gtm">
+                                <form id="gtm-form">
+                                    <div class="form-group">
+                                        <label for="gtm-container-id">GTM Container ID:</label>
+                                        <input type="text" id="gtm-container-id" name="gtmContainerId" placeholder="GTM-XXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GTM Container</button>
+                                        <button type="button" id="remove-gtm" class="btn secondary">Remove GTM</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-ga">
+                                <form id="ga-form">
+                                    <div class="form-group">
+                                        <label for="ga-measurement-id">GA4 Measurement ID:</label>
+                                        <input type="text" id="ga-measurement-id" name="gaMeasurementId" placeholder="G-XXXXXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GA4 Measurement</button>
+                                        <button type="button" id="remove-ga" class="btn secondary">Remove GA</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-adobe">
+                                <form id="adobe-form">
+                                    <div class="form-group">
+                                        <label for="adobe-launch-url">Adobe Launch Script URL:</label>
+                                        <input type="text" id="adobe-launch-url" name="adobeLaunchUrl" placeholder="//assets.adobedtm.com/...">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply Adobe Launch</button>
+                                        <button type="button" id="remove-adobe" class="btn secondary">Remove Adobe</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="tracking-manager-status">
+                            <h3>Active Tracking Solutions:</h3>
+                            <ul id="active-tracking">
+                                <li id="gtm-status">Google Tag Manager: <span>Not configured</span></li>
+                                <li id="ga-status">Google Analytics: <span>Not configured</span></li>
+                                <li id="adobe-status">Adobe Launch: <span>Not configured</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Create the tracking manager element
+            const trackingManager = document.createElement('div');
+            trackingManager.innerHTML = trackingManagerHTML;
+            
+            // Insert after header
+            header.parentNode.insertBefore(trackingManager, header.nextSibling);
+        }
+    
+        function initEventListeners() {
+            // Toggle tracking manager visibility
+            const toggleButton = document.getElementById('toggle-tracking-manager');
+            if (toggleButton) {
+                toggleButton.addEventListener('click', function() {
+                    const content = document.querySelector('.tracking-manager-content');
+                    if (content) {
+                        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                    }
+                });
+            }
+            
+            // Tab functionality
+            const tabButtons = document.querySelectorAll('.tracking-manager .tab-button');
+            const tabContents = document.querySelectorAll('.tracking-manager .tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Deactivate all tabs
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Activate clicked tab
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // GTM form submission
+            const gtmForm = document.getElementById('gtm-form');
+            if (gtmForm) {
+                gtmForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const containerId = document.getElementById('gtm-container-id').value.trim();
+                    if (containerId) {
+                        applyGTMContainer(containerId);
+                        saveTrackingConfiguration('gtm', containerId);
+                    }
+                });
+            }
+            
+            // GA form submission
+            const gaForm = document.getElementById('ga-form');
+            if (gaForm) {
+                gaForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const measurementId = document.getElementById('ga-measurement-id').value.trim();
+                    if (measurementId) {
+                        applyGAMeasurement(measurementId);
+                        saveTrackingConfiguration('ga', measurementId);
+                    }
+                });
+            }
+            
+            // Adobe form submission
+            const adobeForm = document.getElementById('adobe-form');
+            if (adobeForm) {
+                adobeForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const launchUrl = document.getElementById('adobe-launch-url').value.trim();
+                    if (launchUrl) {
+                        applyAdobeLaunch(launchUrl);
+                        saveTrackingConfiguration('adobe', launchUrl);
+                    }
+                });
+            }
+            
+            // Remove buttons
+            const removeGTM = document.getElementById('remove-gtm');
+            if (removeGTM) {
+                removeGTM.addEventListener('click', function() {
+                    removeTrackingTool('gtm');
+                });
+            }
+            
+            const removeGA = document.getElementById('remove-ga');
+            if (removeGA) {
+                removeGA.addEventListener('click', function() {
+                    removeTrackingTool('ga');
+                });
+            }
+            
+            const removeAdobe = document.getElementById('remove-adobe');
+            if (removeAdobe) {
+                removeAdobe.addEventListener('click', function() {
+                    removeTrackingTool('adobe');
+                });
+            }
+        }
+    
+        function applyGTMContainer(containerId) {
+            // Remove existing GTM if any
+            removeScriptById('gtm-script');
+            removeScriptById('gtm-noscript');
+            
+            // Add GTM script to head
+            const gtmScript = document.createElement('script');
+            gtmScript.id = 'gtm-script';
+            gtmScript.innerHTML = `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${containerId}');
+            `;
+            document.head.appendChild(gtmScript);
+            
+            // Add GTM noscript to body
+            const gtmNoscript = document.createElement('noscript');
+            gtmNoscript.id = 'gtm-noscript';
+            gtmNoscript.innerHTML = `
+                <iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+            `;
+            document.body.insertBefore(gtmNoscript, document.body.firstChild);
+            
+            // Update status
+            updateTrackingStatus('gtm', containerId);
+        }
+    
+        function applyGAMeasurement(measurementId) {
+            // Remove existing GA if any
+            removeScriptById('ga-script');
+            
+            // Add GA script to head
+            const gaScript = document.createElement('script');
+            gaScript.id = 'ga-script';
+            gaScript.async = true;
+            gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+            document.head.appendChild(gaScript);
+            
+            // Add GA configuration script
+            const gaConfigScript = document.createElement('script');
+            gaConfigScript.id = 'ga-config-script';
+            gaConfigScript.innerHTML = `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${measurementId}');
+            `;
+            document.head.appendChild(gaConfigScript);
+            
+            // Update status
+            updateTrackingStatus('ga', measurementId);
+        }
+    
+        function applyAdobeLaunch(launchUrl) {
+            // Remove existing Adobe if any
+            removeScriptById('adobe-script');
+            
+            // Add Adobe Launch script to head
+            const adobeScript = document.createElement('script');
+            adobeScript.id = 'adobe-script';
+            adobeScript.src = launchUrl;
+            adobeScript.async = true;
+            document.head.appendChild(adobeScript);
+            
+            // Initialize Adobe Client Data Layer if it doesn't exist
+            if (typeof adobeDataLayer === 'undefined') {
+                const adobeDataLayerScript = document.createElement('script');
+                adobeDataLayerScript.id = 'adobe-datalayer-script';
+                adobeDataLayerScript.innerHTML = `
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                `;
+                document.head.insertBefore(adobeDataLayerScript, adobeScript);
+            }
+            
+            // Update status
+            updateTrackingStatus('adobe', launchUrl);
+        }
+    
+        function removeTrackingTool(tool) {
+            switch (tool) {
+                case 'gtm':
+                    removeScriptById('gtm-script');
+                    removeScriptById('gtm-noscript');
+                    updateTrackingStatus('gtm', null);
+                    break;
+                case 'ga':
+                    removeScriptById('ga-script');
+                    removeScriptById('ga-config-script');
+                    updateTrackingStatus('ga', null);
+                    break;
+                case 'adobe':
+                    removeScriptById('adobe-script');
+                    removeScriptById('adobe-datalayer-script');
+                    updateTrackingStatus('adobe', null);
+                    break;
+            }
+            
+            // Remove from local storage
+            removeTrackingConfiguration(tool);
+        }
+    
+        function removeScriptById(id) {
+            const script = document.getElementById(id);
+            if (script) {
+                script.parentNode.removeChild(script);
+            }
+        }
+    
+        function updateTrackingStatus(tool, value) {
+            const statusElement = document.getElementById(`${tool}-status`);
+            if (statusElement) {
+                const statusText = statusElement.querySelector('span');
+                if (statusText) {
+                    if (value) {
+                        statusText.textContent = value;
+                        statusText.style.color = 'green';
+                    } else {
+                        statusText.textContent = 'Not configured';
+                        statusText.style.color = '';
+                    }
+                }
+            }
+        }
+    
+        function saveTrackingConfiguration(tool, value) {
+            const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+            configurations[tool] = value;
+            localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+        }
+    
+        function removeTrackingConfiguration(tool) {
+            const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+            if (configurations[tool]) {
+                delete configurations[tool];
+                localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+            }
+        }
+    
+        function loadTrackingConfigurations() {
+            const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+            
+            // Apply saved configurations
+            if (configurations.gtm) {
+                document.getElementById('gtm-container-id').value = configurations.gtm;
+                applyGTMContainer(configurations.gtm);
+            }
+            
+            if (configurations.ga) {
+                document.getElementById('ga-measurement-id').value = configurations.ga;
+                applyGAMeasurement(configurations.ga);
+            }
+            
+            if (configurations.adobe) {
+                document.getElementById('adobe-launch-url').value = configurations.adobe;
+                applyAdobeLaunch(configurations.adobe);
+            }
+        }
+    })();
+    
+    // Enhanced tracking function that sends events to all configured tracking tools
+    window.trackEvent = function(category, action, label) {
+        // Check if analytics cookies are accepted
+        const cookiePreferences = JSON.parse(localStorage.getItem('cookiePreferences') || '{"essential":true,"analytics":false,"marketing":false}');
+        
+        if (!cookiePreferences.analytics) {
+            console.log('Analytics tracking disabled by user preferences');
+            return;
+        }
+        
+        // Log the event to console (for debugging)
+        console.log('Track Event:', { category, action, label });
+        
+        // Google Analytics via gtag
+        if (typeof gtag === 'function') {
+            gtag('event', action, {
+                'event_category': category,
+                'event_label': label
+            });
+        }
+        
+        // Google Tag Manager via dataLayer
+        if (typeof dataLayer !== 'undefined') {
+            dataLayer.push({
+                'event': 'custom_event',
+                'event_category': category,
+                'event_action': action,
+                'event_label': label
+            });
+        }
+        
+        // Adobe Analytics via Adobe Client Data Layer
+        if (typeof adobeDataLayer !== 'undefined') {
+            adobeDataLayer.push({
+                'event': 'custom_event',
+                'eventInfo': {
+                    'category': category,
+                    'action': action,
+                    'label': label
+                }
+            });
+        }
+    };
+    </script>
+</head>
+
+<body>
+    <!-- Add your Tag Manager noscript here -->
+    <!-- 
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXX"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    -->
+
+    <header>
+        <nav>
+            <div class="logo">Analytics Testing Playground</div>
+            <ul class="nav-links">
+                <li><a href="index.html" data-nav-item="home">Home</a></li>
+                <li><a href="pages/products.html" data-nav-item="products">Products</a></li>
+                <li><a href="pages/forms.html" data-nav-item="forms">Forms</a></li>
+                <li><a href="pages/media.html" data-nav-item="media">Media</a></li>
+                <li><a href="pages/interactive.html" data-nav-item="interactive">Interactive</a></li>
+                <li><a href="pages/checkout.html" data-nav-item="checkout">Checkout</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Web Analytics Testing Environment</h1>
+                <p>A comprehensive playground for testing analytics implementations and tag management solutions.</p>
+                <div class="cta-buttons">
+                    <a href="pages/forms.html" class="btn primary" id="test-forms-cta">Test Forms</a>
+                    <a href="pages/interactive.html" class="btn secondary" id="test-interactions-cta">Test
+                        Interactions</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2>Testing Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card" id="feature-forms">
+                    <img src="https://previews.123rf.com/images/karenr/karenr0910/karenr091000279/5719510-onderzoek-met-een-hand-met-een-pen-uitstekende-klantenservice.jpg"
+                        alt="Forms Feature">
+                    <h3>Form Testing</h3>
+                    <p>Test different form submissions, validations, and tracking implementations.</p>
+                    <a href="pages/forms.html" class="feature-link">Explore Forms</a>
+                </div>
+                <div class="feature-card" id="feature-media">
+                    <img src="https://previews.123rf.com/images/starlinearts/starlinearts2203/starlinearts220300094/182857678-social-media-video-player-sjabloon-ontwerp.jpg"
+                        alt="Media Feature">
+                    <h3>Media Interactions</h3>
+                    <p>Test video plays, carousels, image galleries and other media interactions.</p>
+                    <a href="pages/media.html" class="feature-link">Explore Media</a>
+                </div>
+                <div class="feature-card" id="feature-ecommerce">
+                    <img src="https://previews.123rf.com/images/sqback/sqback1904/sqback190400028/123623605-computertoetsenbord-met-e-shopping-knop.jpg"
+                        alt="E-commerce Feature">
+                    <h3>E-commerce Flows</h3>
+                    <p>Test product views, add-to-cart events, checkout processes.</p>
+                    <a href="pages/products.html" class="feature-link">Explore Products</a>
+                </div>
+                <div class="feature-card" id="feature-interactive">
+                    <img src="https://previews.123rf.com/images/jzkzlz/jzkzlz1204/jzkzlz120400005/13003937-afstandsbediening-sluiten.jpg"
+                        alt="Interactive Feature">
+                    <h3>Interactive Elements</h3>
+                    <p>Test buttons, toggles, accordions, tabs, and other interactive components.</p>
+                    <a href="pages/interactive.html" class="feature-link">Explore Interactions</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="downloads">
+            <h2>Test Downloads</h2>
+            <p>Test various file downloads and track download events:</p>
+            <div class="download-options">
+                <a href="downloads/sample-pdf.pdf" download class="download-item" data-download-type="pdf">
+                    <div class="download-icon">PDF</div>
+                    <div class="download-info">
+                        <h4>Sample PDF Document</h4>
+                        <p>Test PDF downloads</p>
+                    </div>
+                </a>
+                <a href="downloads/sample-image.jpg" download class="download-item" data-download-type="image">
+                    <div class="download-icon">IMG</div>
+                    <div class="download-info">
+                        <h4>Sample Image</h4>
+                        <p>Test image downloads</p>
+                    </div>
+                </a>
+                <a href="downloads/sample-spreadsheet.xlsx" download class="download-item" data-download-type="excel">
+                    <div class="download-icon">XLS</div>
+                    <div class="download-info">
+                        <h4>Sample Spreadsheet</h4>
+                        <p>Test Excel downloads</p>
+                    </div>
+                </a>
+                <a href="downloads/sample-document.docx" download class="download-item" data-download-type="word">
+                    <div class="download-icon">DOC</div>
+                    <div class="download-info">
+                        <h4>Sample Document</h4>
+                        <p>Test Word downloads</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section class="newsletter">
+            <h2>Newsletter Signup</h2>
+            <p>Test a simple newsletter signup form:</p>
+            <form id="newsletter-form" class="simple-form">
+                <div class="form-group">
+                    <label for="newsletter-email">Email Address:</label>
+                    <input type="email" id="newsletter-email" name="email" required>
+                </div>
+                <div class="form-group checkbox">
+                    <input type="checkbox" id="newsletter-consent" name="consent" required>
+                    <label for="newsletter-consent">I agree to receive marketing emails</label>
+                </div>
+                <button type="submit" class="btn primary">Subscribe</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Analytics Testing Playground</h3>
+                <p>A project for testing web analytics implementations.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="index.html" data-footer-link="home">Home</a></li>
+                    <li><a href="pages/products.html" data-footer-link="products">Products</a></li>
+                    <li><a href="pages/forms.html" data-footer-link="forms">Forms</a></li>
+                    <li><a href="pages/media.html" data-footer-link="media">Media</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>External Links</h3>
+                <ul>
+                    <li><a href="https://www.google.com/analytics/" target="_blank"
+                            data-external-link="google-analytics">Google Analytics</a></li>
+                    <li><a href="https://tagmanager.google.com/" target="_blank" data-external-link="gtm">Google Tag
+                            Manager</a></li>
+                    <li><a href="https://analytics.google.com/" target="_blank" data-external-link="ga4">Google
+                            Analytics 4</a></li>
+                    <li><a href="https://www.adobe.com/analytics/adobe-analytics.html" target="_blank"
+                            data-external-link="adobe">Adobe Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Analytics Testing Playground. For testing purposes only.</p>
+        </div>
+    </footer>
+
+    <div class="cookie-consent" id="cookie-banner">
+        <div class="cookie-content">
+            <p>This website uses cookies to test analytics implementations. By using this site, you agree to our cookie
+                policy.</p>
+            <div class="cookie-buttons">
+                <button id="accept-cookies" class="btn primary">Accept All</button>
+                <button id="reject-cookies" class="btn secondary">Reject Non-Essential</button>
+                <button id="customize-cookies" class="btn tertiary">Customize</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cookie-settings" id="cookie-settings">
+        <div class="cookie-settings-content">
+            <h2>Cookie Preferences</h2>
+            <div class="cookie-types">
+                <div class="cookie-type">
+                    <div class="cookie-header">
+                        <h3>Essential Cookies</h3>
+                        <div class="toggle-switch disabled">
+                            <input type="checkbox" id="essential-cookies" checked disabled>
+                            <label for="essential-cookies"></label>
+                        </div>
+                    </div>
+                    <p>These cookies are necessary for the website to function and cannot be switched off.</p>
+                </div>
+                <div class="cookie-type">
+                    <div class="cookie-header">
+                        <h3>Analytics Cookies</h3>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="analytics-cookies">
+                            <label for="analytics-cookies"></label>
+                        </div>
+                    </div>
+                    <p>These cookies allow us to count visits and traffic sources, so we can measure and improve the
+                        performance of our site.</p>
+                </div>
+                <div class="cookie-type">
+                    <div class="cookie-header">
+                        <h3>Marketing Cookies</h3>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="marketing-cookies">
+                            <label for="marketing-cookies"></label>
+                        </div>
+                    </div>
+                    <p>These cookies may be set through our site by our advertising partners to build a profile of your
+                        interests.</p>
+                </div>
+            </div>
+            <div class="cookie-actions">
+                <button id="save-preferences" class="btn primary">Save Preferences</button>
+                <button id="close-settings" class="btn secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="newsletter-confirmation">
+        <div class="popup-content">
+            <h3>Thank You!</h3>
+            <p>You have successfully subscribed to our newsletter.</p>
+            <button id="close-popup" class="btn primary">Close</button>
+        </div>
+    </div>
+
+    <script src="scripts/main.js"></script>
+</body>
+
+</html>

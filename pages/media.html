@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media - Analytics Testing Playground</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <!-- Tracking Manager CSS -->
+    <style>
+        /* Tracking Manager Styles */
+        .tracking-manager {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px auto;
+            max-width: 1200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .tracking-manager-header {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tracking-manager-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .tracking-manager-content {
+            padding: 20px;
+        }
+
+        .tracking-manager .tabs {
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tracking-manager .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #6c757d;
+            position: relative;
+        }
+
+        .tracking-manager .tab-button.active {
+            color: #007bff;
+        }
+
+        .tracking-manager .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #007bff;
+        }
+
+        .tracking-manager .tab-content {
+            display: none;
+        }
+
+        .tracking-manager .tab-content.active {
+            display: block;
+        }
+
+        .tracking-manager .form-group {
+            margin-bottom: 15px;
+        }
+
+        .tracking-manager label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .tracking-manager input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .tracking-manager .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tracking-manager-status {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .tracking-manager-status h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        .tracking-manager-status ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tracking-manager-status li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tracking-manager-status span {
+            font-style: italic;
+            color: #999;
+        }
+    </style>
+
+    <!-- Tracking Manager JS -->
+    <script>
+        // Tracking Manager for Analytics Testing Playground
+        (function () {
+            // Initialize tracking manager after DOM is fully loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                initTrackingManager();
+            });
+
+            function initTrackingManager() {
+                // Insert tracking management UI after header
+                insertTrackingManagerUI();
+
+                // Load previously saved tracking configurations
+                loadTrackingConfigurations();
+
+                // Initialize event listeners
+                initEventListeners();
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                }
+
+                // Initialize dataLayer if it doesn't exist
+                if (typeof dataLayer === 'undefined') {
+                    window.dataLayer = window.dataLayer || [];
+                }
+            }
+
+            function insertTrackingManagerUI() {
+                const header = document.querySelector('header');
+                if (!header) return;
+
+                const trackingManagerHTML = `
+                <div id="tracking-manager" class="tracking-manager">
+                    <div class="tracking-manager-header">
+                        <h2>Tracking Manager</h2>
+                        <button id="toggle-tracking-manager" class="btn tertiary">Toggle</button>
+                    </div>
+                    <div class="tracking-manager-content">
+                        <div class="tabs">
+                            <div class="tab-nav">
+                                <button class="tab-button active" data-tab="tab-gtm">Google Tag Manager</button>
+                                <button class="tab-button" data-tab="tab-ga">Google Analytics</button>
+                                <button class="tab-button" data-tab="tab-adobe">Adobe Launch</button>
+                            </div>
+                            <div class="tab-content active" id="tab-gtm">
+                                <form id="gtm-form">
+                                    <div class="form-group">
+                                        <label for="gtm-container-id">GTM Container ID:</label>
+                                        <input type="text" id="gtm-container-id" name="gtmContainerId" placeholder="GTM-XXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GTM Container</button>
+                                        <button type="button" id="remove-gtm" class="btn secondary">Remove GTM</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-ga">
+                                <form id="ga-form">
+                                    <div class="form-group">
+                                        <label for="ga-measurement-id">GA4 Measurement ID:</label>
+                                        <input type="text" id="ga-measurement-id" name="gaMeasurementId" placeholder="G-XXXXXXXXXX">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply GA4 Measurement</button>
+                                        <button type="button" id="remove-ga" class="btn secondary">Remove GA</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-content" id="tab-adobe">
+                                <form id="adobe-form">
+                                    <div class="form-group">
+                                        <label for="adobe-launch-url">Adobe Launch Script URL:</label>
+                                        <input type="text" id="adobe-launch-url" name="adobeLaunchUrl" placeholder="//assets.adobedtm.com/...">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn primary">Apply Adobe Launch</button>
+                                        <button type="button" id="remove-adobe" class="btn secondary">Remove Adobe</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="tracking-manager-status">
+                            <h3>Active Tracking Solutions:</h3>
+                            <ul id="active-tracking">
+                                <li id="gtm-status">Google Tag Manager: <span>Not configured</span></li>
+                                <li id="ga-status">Google Analytics: <span>Not configured</span></li>
+                                <li id="adobe-status">Adobe Launch: <span>Not configured</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                // Create the tracking manager element
+                const trackingManager = document.createElement('div');
+                trackingManager.innerHTML = trackingManagerHTML;
+
+                // Insert after header
+                header.parentNode.insertBefore(trackingManager, header.nextSibling);
+            }
+
+            function initEventListeners() {
+                // Toggle tracking manager visibility
+                const toggleButton = document.getElementById('toggle-tracking-manager');
+                if (toggleButton) {
+                    toggleButton.addEventListener('click', function () {
+                        const content = document.querySelector('.tracking-manager-content');
+                        if (content) {
+                            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                // Tab functionality
+                const tabButtons = document.querySelectorAll('.tracking-manager .tab-button');
+                const tabContents = document.querySelectorAll('.tracking-manager .tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const tabId = this.getAttribute('data-tab');
+
+                        // Deactivate all tabs
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Activate clicked tab
+                        this.classList.add('active');
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+
+                // GTM form submission
+                const gtmForm = document.getElementById('gtm-form');
+                if (gtmForm) {
+                    gtmForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const containerId = document.getElementById('gtm-container-id').value.trim();
+                        if (containerId) {
+                            applyGTMContainer(containerId);
+                            saveTrackingConfiguration('gtm', containerId);
+                        }
+                    });
+                }
+
+                // GA form submission
+                const gaForm = document.getElementById('ga-form');
+                if (gaForm) {
+                    gaForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const measurementId = document.getElementById('ga-measurement-id').value.trim();
+                        if (measurementId) {
+                            applyGAMeasurement(measurementId);
+                            saveTrackingConfiguration('ga', measurementId);
+                        }
+                    });
+                }
+
+                // Adobe form submission
+                const adobeForm = document.getElementById('adobe-form');
+                if (adobeForm) {
+                    adobeForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const launchUrl = document.getElementById('adobe-launch-url').value.trim();
+                        if (launchUrl) {
+                            applyAdobeLaunch(launchUrl);
+                            saveTrackingConfiguration('adobe', launchUrl);
+                        }
+                    });
+                }
+
+                // Remove buttons
+                const removeGTM = document.getElementById('remove-gtm');
+                if (removeGTM) {
+                    removeGTM.addEventListener('click', function () {
+                        removeTrackingTool('gtm');
+                    });
+                }
+
+                const removeGA = document.getElementById('remove-ga');
+                if (removeGA) {
+                    removeGA.addEventListener('click', function () {
+                        removeTrackingTool('ga');
+                    });
+                }
+
+                const removeAdobe = document.getElementById('remove-adobe');
+                if (removeAdobe) {
+                    removeAdobe.addEventListener('click', function () {
+                        removeTrackingTool('adobe');
+                    });
+                }
+            }
+
+            function applyGTMContainer(containerId) {
+                // Remove existing GTM if any
+                removeScriptById('gtm-script');
+                removeScriptById('gtm-noscript');
+
+                // Add GTM script to head
+                const gtmScript = document.createElement('script');
+                gtmScript.id = 'gtm-script';
+                gtmScript.innerHTML = `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${containerId}');
+            `;
+                document.head.appendChild(gtmScript);
+
+                // Add GTM noscript to body
+                const gtmNoscript = document.createElement('noscript');
+                gtmNoscript.id = 'gtm-noscript';
+                gtmNoscript.innerHTML = `
+                <iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+            `;
+                document.body.insertBefore(gtmNoscript, document.body.firstChild);
+
+                // Update status
+                updateTrackingStatus('gtm', containerId);
+            }
+
+            function applyGAMeasurement(measurementId) {
+                // Remove existing GA if any
+                removeScriptById('ga-script');
+
+                // Add GA script to head
+                const gaScript = document.createElement('script');
+                gaScript.id = 'ga-script';
+                gaScript.async = true;
+                gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+                document.head.appendChild(gaScript);
+
+                // Add GA configuration script
+                const gaConfigScript = document.createElement('script');
+                gaConfigScript.id = 'ga-config-script';
+                gaConfigScript.innerHTML = `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${measurementId}');
+            `;
+                document.head.appendChild(gaConfigScript);
+
+                // Update status
+                updateTrackingStatus('ga', measurementId);
+            }
+
+            function applyAdobeLaunch(launchUrl) {
+                // Remove existing Adobe if any
+                removeScriptById('adobe-script');
+
+                // Add Adobe Launch script to head
+                const adobeScript = document.createElement('script');
+                adobeScript.id = 'adobe-script';
+                adobeScript.src = launchUrl;
+                adobeScript.async = true;
+                document.head.appendChild(adobeScript);
+
+                // Initialize Adobe Client Data Layer if it doesn't exist
+                if (typeof adobeDataLayer === 'undefined') {
+                    const adobeDataLayerScript = document.createElement('script');
+                    adobeDataLayerScript.id = 'adobe-datalayer-script';
+                    adobeDataLayerScript.innerHTML = `
+                    window.adobeDataLayer = window.adobeDataLayer || [];
+                `;
+                    document.head.insertBefore(adobeDataLayerScript, adobeScript);
+                }
+
+                // Update status
+                updateTrackingStatus('adobe', launchUrl);
+            }
+
+            function removeTrackingTool(tool) {
+                switch (tool) {
+                    case 'gtm':
+                        removeScriptById('gtm-script');
+                        removeScriptById('gtm-noscript');
+                        updateTrackingStatus('gtm', null);
+                        break;
+                    case 'ga':
+                        removeScriptById('ga-script');
+                        removeScriptById('ga-config-script');
+                        updateTrackingStatus('ga', null);
+                        break;
+                    case 'adobe':
+                        removeScriptById('adobe-script');
+                        removeScriptById('adobe-datalayer-script');
+                        updateTrackingStatus('adobe', null);
+                        break;
+                }
+
+                // Remove from local storage
+                removeTrackingConfiguration(tool);
+            }
+
+            function removeScriptById(id) {
+                const script = document.getElementById(id);
+                if (script) {
+                    script.parentNode.removeChild(script);
+                }
+            }
+
+            function updateTrackingStatus(tool, value) {
+                const statusElement = document.getElementById(`${tool}-status`);
+                if (statusElement) {
+                    const statusText = statusElement.querySelector('span');
+                    if (statusText) {
+                        if (value) {
+                            statusText.textContent = value;
+                            statusText.style.color = 'green';
+                        } else {
+                            statusText.textContent = 'Not configured';
+                            statusText.style.color = '';
+                        }
+                    }
+                }
+            }
+
+            function saveTrackingConfiguration(tool, value) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                configurations[tool] = value;
+                localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+            }
+
+            function removeTrackingConfiguration(tool) {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+                if (configurations[tool]) {
+                    delete configurations[tool];
+                    localStorage.setItem('trackingConfigurations', JSON.stringify(configurations));
+                }
+            }
+
+            function loadTrackingConfigurations() {
+                const configurations = JSON.parse(localStorage.getItem('trackingConfigurations') || '{}');
+
+                // Apply saved configurations
+                if (configurations.gtm) {
+                    document.getElementById('gtm-container-id').value = configurations.gtm;
+                    applyGTMContainer(configurations.gtm);
+                }
+
+                if (configurations.ga) {
+                    document.getElementById('ga-measurement-id').value = configurations.ga;
+                    applyGAMeasurement(configurations.ga);
+                }
+
+                if (configurations.adobe) {
+                    document.getElementById('adobe-launch-url').value = configurations.adobe;
+                    applyAdobeLaunch(configurations.adobe);
+                }
+            }
+        })();
+
+        // Enhanced tracking function that sends events to all configured tracking tools
+        window.trackEvent = function (category, action, label) {
+            // Check if analytics cookies are accepted
+            const cookiePreferences = JSON.parse(localStorage.getItem('cookiePreferences') || '{"essential":true,"analytics":false,"marketing":false}');
+
+            if (!cookiePreferences.analytics) {
+                console.log('Analytics tracking disabled by user preferences');
+                return;
+            }
+
+            // Log the event to console (for debugging)
+            console.log('Track Event:', { category, action, label });
+
+            // Google Analytics via gtag
+            if (typeof gtag === 'function') {
+                gtag('event', action, {
+                    'event_category': category,
+                    'event_label': label
+                });
+            }
+
+            // Google Tag Manager via dataLayer
+            if (typeof dataLayer !== 'undefined') {
+                dataLayer.push({
+                    'event': 'custom_event',
+                    'event_category': category,
+                    'event_action': action,
+                    'event_label': label
+                });
+            }
+
+            // Adobe Analytics via Adobe Client Data Layer
+            if (typeof adobeDataLayer !== 'undefined') {
+                adobeDataLayer.push({
+                    'event': 'custom_event',
+                    'eventInfo': {
+                        'category': category,
+                        'action': action,
+                        'label': label
+                    }
+                });
+            }
+        };
+    </script>
+</head>
+
+<body>
+    <!-- Add your Tag Manager noscript here -->
+
+    <header>
+        <nav>
+            <div class="logo">Analytics Testing Playground</div>
+            <ul class="nav-links">
+                <li><a href="../index.html" data-nav-item="home">Home</a></li>
+                <li><a href="products.html" data-nav-item="products">Products</a></li>
+                <li><a href="forms.html" data-nav-item="forms">Forms</a></li>
+                <li><a href="media.html" data-nav-item="media">Media</a></li>
+                <li><a href="interactive.html" data-nav-item="interactive">Interactive</a></li>
+                <li><a href="checkout.html" data-nav-item="checkout">Checkout</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <h1>Media Elements</h1>
+            <p>Test various media elements and tracking implementations.</p>
+        </section>
+
+        <section class="media-section">
+            <h2>Image Carousel</h2>
+            <p>Test carousel interactions and tracking:</p>
+
+            <div class="carousel">
+                <div class="carousel-inner">
+                    <div class="carousel-item">
+                        <img src="https://us.123rf.com/450wm/fotografiecor/fotografiecor1404/fotografiecor140400031/27503323-tulpen-een-velden-in-het-voorjaar-in-nederland.jpg?ver=6"
+                            alt="Carousel Image 1">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://us.123rf.com/450wm/peterorsel/peterorsel2307/peterorsel230700005/209623814-beautiful-sunset-view-on-lago-di-limides-in-the-falzarego-pass-dolomites-italy.jpg?ver=6"
+                            alt="Carousel Image 2">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://us.123rf.com/450wm/atlasfoto/atlasfoto2303/atlasfoto230300783/199452179-concept-van-pasen-gelukkige-paasvakantie-concept.jpg?ver=6"
+                            alt="Carousel Image 3">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://us.123rf.com/450wm/pronyaevg/pronyaevg2311/pronyaevg231100350/235906591-closeup-portrait-of-a-beautiful-girl-with-curly-brown-hair-in-a-white-blouse-and-with-bright-flowers.jpg?ver=6"
+                            alt="Carousel Image 4">
+                    </div>
+                </div>
+
+                <div class="carousel-controls">
+                    <button class="carousel-control prev">&#10094;</button>
+                    <button class="carousel-control next">&#10095;</button>
+                </div>
+
+                <div class="carousel-indicators">
+                    <button class="carousel-indicator active" data-slide="0"></button>
+                    <button class="carousel-indicator" data-slide="1"></button>
+                    <button class="carousel-indicator" data-slide="2"></button>
+                    <button class="carousel-indicator" data-slide="3"></button>
+                </div>
+            </div>
+        </section>
+
+        <section class="media-section">
+            <h2>Video Player</h2>
+            <p>Test video interactions and tracking:</p>
+
+            <div class="video-container">
+                <div class="video-player">
+                    <video poster="">
+                        <!-- For testing purposes, we're using a video that doesn't exist -->
+                        <!-- In a real implementation, you would use a valid video source -->
+                        <source src="https://www.sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
+                            type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+
+                    <div class="video-controls">
+                        <button class="play-pause">▶️</button>
+                        <div class="progress-bar">
+                            <div class="progress"></div>
+                        </div>
+                        <button class="mute">🔊</button>
+                        <button class="fullscreen">⛶</button>
+                    </div>
+                </div>
+
+                <div class="video-info">
+                    <h3>Sample Video Title</h3>
+                    <p>This is a sample video for testing video tracking implementations. In a real application, this
+                        would be an actual video file.</p>
+                    <div class="video-meta">
+                        <span>Duration: 2:30</span>
+                        <span>Views: 1,234</span>
+                        <span>Uploaded: Jan 1, 2023</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="media-section">
+            <h2>Image Gallery</h2>
+            <p>Test image gallery interactions:</p>
+
+            <div class="media-gallery">
+                <div class="gallery-grid">
+                    <div class="gallery-item" data-image-id="img-001">
+                        <img src="https://us.123rf.com/450wm/lightfieldstudios/lightfieldstudios1808/lightfieldstudios180802590/105733843-bijgesneden-shot-van-vrouwelijke-benen-en-diverse-gearrangeerde-mooie-bloemen-in-melk.jpg?ver=6"
+                            alt="Gallery Image 1">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-002">
+                        <img src="https://us.123rf.com/450wm/zhukovvvlad/zhukovvvlad2502/zhukovvvlad250200032/240812353-girl-with-a-backpack-stylish-woman-with-backpack-enjoys-going-to-the-beach-on-a-cold-sunny-day-lifes.jpg?ver=6"
+                            alt="Gallery Image 2">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-003">
+                        <img src="https://us.123rf.com/450wm/mdurinik/mdurinik1208/mdurinik120800004/14726912-schattig-puffin-vogel-sluit-portret-van-kleine-afstand.jpg?ver=6"
+                            alt="Gallery Image 3">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-004">
+                        <img src="https://us.123rf.com/450wm/lightfieldstudios/lightfieldstudios1806/lightfieldstudios180601893/102327064-knappe-afro-amerikaanse-man-met-vlinderdas-en-bril-spelen-op-akoestische-gitaar-en-kijken-naar-camer.jpg?ver=6"
+                            alt="Gallery Image 4">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-005">
+                        <img src="https://us.123rf.com/450wm/wirestock/wirestock2308/wirestock230817311/211274693-hummingbird-in-flight-glitteringbellied-emerald-chlorostilbon-lucidus.jpg?ver=6"
+                            alt="Gallery Image 5">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-006">
+                        <img src="https://us.123rf.com/450wm/saiva/saiva1903/saiva190300010/119672206-tropische-vlinder-zit-op-het-blad-sluit-beeld.jpg?ver=6"
+                            alt="Gallery Image 6">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-007">
+                        <img src="https://us.123rf.com/450wm/abshine/abshine2105/abshine210500005/169484364-potmarigolde-bloem.jpg?ver=6"
+                            alt="Gallery Image 7">
+                    </div>
+                    <div class="gallery-item" data-image-id="img-008">
+                        <img src="https://us.123rf.com/450wm/lightfieldstudios/lightfieldstudios2312/lightfieldstudios231200466/219290035-relaxed-and-muscular-young-cuban-man-in-eyeglasses-and-black-outfit-touching-head.jpg?ver=6"
+                            alt="Gallery Image 8">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="media-section">
+            <h2>Audio Player</h2>
+            <p>Test audio interactions and tracking:</p>
+
+            <div class="audio-container">
+                <div class="audio-player">
+                    <div class="audio-info">
+                        <div class="audio-thumbnail">
+                            <img src="" alt="Audio Thumbnail">
+                        </div>
+                        <div class="audio-details">
+                            <h3>Sample Audio Track</h3>
+                            <p>Artist: Sample Artist</p>
+                        </div>
+                    </div>
+
+                    <div class="audio-controls">
+                        <button class="audio-play">▶️</button>
+                        <div class="audio-progress">
+                            <div class="audio-progress-bar"></div>
+                        </div>
+                        <div class="audio-time">0:00 / 3:45</div>
+                        <button class="audio-mute">🔊</button>
+                    </div>
+                </div>
+
+                <div class="audio-playlist">
+                    <h3>Playlist</h3>
+                    <ul class="playlist-items">
+                        <li class="playlist-item active" data-audio-id="audio-001">
+                            <div class="playlist-item-number">1</div>
+                            <div class="playlist-item-info">
+                                <div class="playlist-item-title">Sample Audio Track</div>
+                                <div class="playlist-item-artist">Sample Artist</div>
+                            </div>
+                            <div class="playlist-item-duration">3:45</div>
+                        </li>
+                        <li class="playlist-item" data-audio-id="audio-002">
+                            <div class="playlist-item-number">2</div>
+                            <div class="playlist-item-info">
+                                <div class="playlist-item-title">Another Audio Track</div>
+                                <div class="playlist-item-artist">Another Artist</div>
+                            </div>
+                            <div class="playlist-item-duration">4:20</div>
+                        </li>
+                        <li class="playlist-item" data-audio-id="audio-003">
+                            <div class="playlist-item-number">3</div>
+                            <div class="playlist-item-info">
+                                <div class="playlist-item-title">Third Audio Track</div>
+                                <div class="playlist-item-artist">Third Artist</div>
+                            </div>
+                            <div class="playlist-item-duration">2:55</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="media-section">
+            <h2>Embedded Content</h2>
+            <p>Test embedded content tracking:</p>
+
+            <div class="embedded-content">
+                <div class="embedded-item">
+                    <h3>Embedded Map</h3>
+                    <div class="embedded-placeholder" data-embed-type="map">
+                        <img src="data:image/jpeg;base64,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"
+                            alt="Map Placeholder">
+                        <div id="map-container" class="embed-overlay">
+                            <p>This would be an embedded map in a real implementation.</p>
+                            <button class="btn primary load-embed" data-embed-type="map">Load Map</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="embedded-item">
+                    <h3>Embedded Social Media Feed</h3>
+                    <div class="embedded-placeholder" data-embed-type="social">
+                        <img src="data:image/jpeg;base64,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"
+                            alt="Social Feed Placeholder">
+                        <div class="embed-overlay">
+                            <p>This would be an embedded social media feed in a real implementation.</p>
+                            <button class="btn primary load-embed" data-embed-type="social">Load Social Feed</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="media-section">
+            <h2>Interactive Infographic</h2>
+            <p>Test interactions with an interactive infographic:</p>
+
+            <div class="infographic">
+                <img src="https://us.123rf.com/450wm/daviles/daviles1811/daviles181100093/121438260-detail-van-moderne-bouwhoek-met-blauwe-lucht-achtergrond.jpg?ver=6"
+                    alt="Infographic" class="infographic-base">
+
+                <div class="hotspot" style="top: 20%; left: 30%;" data-hotspot-id="hotspot-1">
+                    <div class="hotspot-dot"></div>
+                    <div class="hotspot-content">
+                        <h4>Feature 1</h4>
+                        <p>This is information about feature 1 in the infographic.</p>
+                    </div>
+                </div>
+
+                <div class="hotspot" style="top: 40%; left: 60%;" data-hotspot-id="hotspot-2">
+                    <div class="hotspot-dot"></div>
+                    <div class="hotspot-content">
+                        <h4>Feature 2</h4>
+                        <p>This is information about feature 2 in the infographic.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About</h3>
+                <p>This is a testing playground for web analytics implementations. It contains various elements and
+                    interactions to test tracking setups.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="https://analytics.google.com/" target="_blank" data-external-link="ga4">Google
+                            Analytics 4</a></li>
+                    <li><a href="https://www.adobe.com/analytics/adobe-analytics.html" target="_blank"
+                            data-external-link="adobe">Adobe Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Analytics Testing Playground. For testing purposes only.</p>
+        </div>
+    </footer>
+
+    <div class="modal" id="image-modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-body">
+                <img src="" alt="Full Size Image" id="modal-image">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Gallery image click
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            const imageModal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+
+            galleryItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    const imageId = this.getAttribute('data-image-id');
+                    const imageSrc = this.querySelector('img').src;
+                    const imageAlt = this.querySelector('img').alt;
+
+                    // Set modal image
+                    if (modalImage) {
+                        modalImage.src = imageSrc;
+                        modalImage.alt = imageAlt;
+                    }
+
+                    // Show modal
+                    if (imageModal) {
+                        imageModal.classList.add('active');
+                    }
+
+                    // Track gallery image click
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('gallery_image', 'click', imageId);
+                    }
+                });
+            });
+
+            // Modal close button
+            const modalClose = document.querySelector('.modal-close');
+            if (modalClose) {
+                modalClose.addEventListener('click', function () {
+                    if (imageModal) {
+                        imageModal.classList.remove('active');
+                    }
+                });
+            }
+
+            // Close modal when clicking outside of content
+            if (imageModal) {
+                imageModal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            }
+
+            // Carousel functionality
+            const carousel = document.querySelector('.carousel');
+            if (carousel) {
+                const carouselItems = carousel.querySelectorAll('.carousel-item');
+                const indicators = carousel.querySelectorAll('.carousel-indicator');
+                const prevButton = carousel.querySelector('.prev');
+                const nextButton = carousel.querySelector('.next');
+                let currentSlide = 0;
+
+                // Function to show a specific slide
+                function showSlide(index) {
+                    // Hide all slides
+                    carouselItems.forEach(item => {
+                        item.style.display = 'none';
+                    });
+
+                    // Remove active class from all indicators
+                    indicators.forEach(indicator => {
+                        indicator.classList.remove('active');
+                    });
+
+                    // Show the current slide
+                    carouselItems[index].style.display = 'block';
+
+                    // Add active class to current indicator
+                    indicators[index].classList.add('active');
+
+                    // Update current slide index
+                    currentSlide = index;
+
+                    // Track slide change
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('carousel', 'slide_change', `slide-${index + 1}`);
+                    }
+                }
+
+                // Show the first slide initially
+                showSlide(0);
+
+                // Next button click
+                if (nextButton) {
+                    nextButton.addEventListener('click', function () {
+                        let nextSlide = currentSlide + 1;
+                        if (nextSlide >= carouselItems.length) {
+                            nextSlide = 0;
+                        }
+                        showSlide(nextSlide);
+                    });
+                }
+
+                // Previous button click
+                if (prevButton) {
+                    prevButton.addEventListener('click', function () {
+                        let prevSlide = currentSlide - 1;
+                        if (prevSlide < 0) {
+                            prevSlide = carouselItems.length - 1;
+                        }
+                        showSlide(prevSlide);
+                    });
+                }
+
+                // Indicator clicks
+                indicators.forEach((indicator, index) => {
+                    indicator.addEventListener('click', function () {
+                        showSlide(index);
+                    });
+                });
+
+                // Auto-advance slides every 5 seconds
+                setInterval(function () {
+                    let nextSlide = currentSlide + 1;
+                    if (nextSlide >= carouselItems.length) {
+                        nextSlide = 0;
+                    }
+                    showSlide(nextSlide);
+                }, 10000);
+            }
+
+            // Video player functionality
+            const videoPlayer = document.querySelector('.video-player');
+            if (videoPlayer) {
+                const video = videoPlayer.querySelector('video');
+                const playPauseButton = videoPlayer.querySelector('.play-pause');
+                const progressBar = videoPlayer.querySelector('.progress');
+                const muteButton = videoPlayer.querySelector('.mute');
+                const fullscreenButton = videoPlayer.querySelector('.fullscreen');
+
+                // Play/Pause button click
+                if (playPauseButton && video) {
+                    playPauseButton.addEventListener('click', function () {
+                        if (video.paused) {
+                            video.play();
+                            this.textContent = '⏸️';
+
+                            // Track video play
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('video', 'play', 'Sample Video');
+                            }
+                        } else {
+                            video.pause();
+                            this.textContent = '▶️';
+
+                            // Track video pause
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('video', 'pause', 'Sample Video');
+                            }
+                        }
+                    });
+                }
+
+                // Update progress bar as video plays
+                if (video && progressBar) {
+                    video.addEventListener('timeupdate', function () {
+                        const percentage = (video.currentTime / video.duration) * 100;
+                        progressBar.style.width = percentage + '%';
+                    });
+                }
+
+                // Mute button click
+                if (muteButton && video) {
+                    muteButton.addEventListener('click', function () {
+                        if (video.muted) {
+                            video.muted = false;
+                            this.textContent = '🔊';
+
+                            // Track video unmute
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('video', 'unmute', 'Sample Video');
+                            }
+                        } else {
+                            video.muted = true;
+                            this.textContent = '🔇';
+
+                            // Track video mute
+                            if (typeof trackEvent === 'function') {
+                                trackEvent('video', 'mute', 'Sample Video');
+                            }
+                        }
+                    });
+                }
+
+                // Fullscreen button click
+                if (fullscreenButton && video) {
+                    fullscreenButton.addEventListener('click', function () {
+                        if (video.requestFullscreen) {
+                            video.requestFullscreen();
+                        } else if (video.webkitRequestFullscreen) {
+                            video.webkitRequestFullscreen();
+                        } else if (video.msRequestFullscreen) {
+                            video.msRequestFullscreen();
+                        }
+
+                        // Track fullscreen
+                        if (typeof trackEvent === 'function') {
+                            trackEvent('video', 'fullscreen', 'Sample Video');
+                        }
+                    });
+                }
+            }
+
+            // Audio player functionality
+            const audioPlayer = document.querySelector('.audio-player');
+            if (audioPlayer) {
+                const playButton = audioPlayer.querySelector('.audio-play');
+                const progressBar = audioPlayer.querySelector('.audio-progress-bar');
+                const timeDisplay = audioPlayer.querySelector('.audio-time');
+                const muteButton = audioPlayer.querySelector('.audio-mute');
+                const playlistItems = document.querySelectorAll('.playlist-item');
+
+                // Play button click (simulated since we don't have actual audio)
+                if (playButton) {
+                    let isPlaying = false;
+
+                    playButton.addEventListener('click', function () {
+                        isPlaying = !isPlaying;
+
+                        if (isPlaying) {
+                            this.textContent = '⏸️';
+                            simulateAudioProgress();
+
+                            // Track audio play
+                            if (typeof trackEvent === 'function') {
+                                const activeItem = document.querySelector('.playlist-item.active');
+                                const audioId = activeItem ? activeItem.getAttribute('data-audio-id') : 'audio-001';
+                                trackEvent('audio', 'play', audioId);
+                            }
+                        } else {
+                            this.textContent = '▶️';
+                            clearInterval(progressInterval);
+
+                            // Track audio pause
+                            if (typeof trackEvent === 'function') {
+                                const activeItem = document.querySelector('.playlist-item.active');
+                                const audioId = activeItem ? activeItem.getAttribute('data-audio-id') : 'audio-001';
+                                trackEvent('audio', 'pause', audioId);
+                            }
+                        }
+                    });
+                }
+
+                // Simulate audio progress
+                let progressInterval;
+                let currentProgress = 0;
+
+                function simulateAudioProgress() {
+                    clearInterval(progressInterval);
+                    currentProgress = 0;
+
+                    progressInterval = setInterval(function () {
+                        currentProgress += 1;
+
+                        if (progressBar) {
+                            const percentage = Math.min((currentProgress / 225) * 100, 100);
+                            progressBar.style.width = percentage + '%';
+                        }
+
+                        if (timeDisplay) {
+                            const minutes = Math.floor(currentProgress / 60);
+                            const seconds = currentProgress % 60;
+                            timeDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds} / 3:45`;
+                        }
+
+                        if (currentProgress >= 225) {
+                            clearInterval(progressInterval);
+                            playButton.textContent = '▶️';
+                            isPlaying = false;
+
+                            // Track audio complete
+                            if (typeof trackEvent === 'function') {
+                                const activeItem = document.querySelector('.playlist-item.active');
+                                const audioId = activeItem ? activeItem.getAttribute('data-audio-id') : 'audio-001';
+                                trackEvent('audio', 'complete', audioId);
+                            }
+                        }
+                    }, 1000);
+                }
+
+                // Mute button click
+                if (muteButton) {
+                    let isMuted = false;
+
+                    muteButton.addEventListener('click', function () {
+                        isMuted = !isMuted;
+
+                        if (isMuted) {
+                            this.textContent = '🔇';
+
+                            // Track audio mute
+                            if (typeof trackEvent === 'function') {
+                                const activeItem = document.querySelector('.playlist-item.active');
+                                const audioId = activeItem ? activeItem.getAttribute('data-audio-id') : 'audio-001';
+                                trackEvent('audio', 'mute', audioId);
+                            }
+                        } else {
+                            this.textContent = '🔊';
+
+                            // Track audio unmute
+                            if (typeof trackEvent === 'function') {
+                                const activeItem = document.querySelector('.playlist-item.active');
+                                const audioId = activeItem ? activeItem.getAttribute('data-audio-id') : 'audio-001';
+                                trackEvent('audio', 'unmute', audioId);
+                            }
+                        }
+                    });
+                }
+
+                // Playlist item click
+                playlistItems.forEach(item => {
+                    item.addEventListener('click', function () {
+                        // Remove active class from all items
+                        playlistItems.forEach(i => {
+                            i.classList.remove('active');
+                        });
+
+                        // Add active class to clicked item
+                        this.classList.add('active');
+
+                        // Reset player
+                        if (playButton) {
+                            playButton.textContent = '▶️';
+                        }
+
+                        if (progressBar) {
+                            progressBar.style.width = '0%';
+                        }
+
+                        if (timeDisplay) {
+                            timeDisplay.textContent = '0:00 / 3:45';
+                        }
+
+                        clearInterval(progressInterval);
+                        isPlaying = false;
+
+                        // Update audio info
+                        const title = this.querySelector('.playlist-item-title').textContent;
+                        const artist = this.querySelector('.playlist-item-artist').textContent;
+                        const audioDetails = document.querySelector('.audio-details');
+
+                        if (audioDetails) {
+                            audioDetails.innerHTML = `
+                                <h3>${title}</h3>
+                                <p>Artist: ${artist}</p>
+                            `;
+                        }
+
+                        // Track playlist item click
+                        if (typeof trackEvent === 'function') {
+                            const audioId = this.getAttribute('data-audio-id');
+                            trackEvent('audio', 'select_track', audioId);
+                        }
+                    });
+                });
+            }
+
+            // Embedded content
+            const embedButtons = document.querySelectorAll('.load-embed');
+
+            embedButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const embedType = this.getAttribute('data-embed-type');
+                    const embedPlaceholder = this.closest('.embedded-placeholder');
+
+                    // Simulate loading embedded content
+                    if (embedPlaceholder) {
+                        const overlay = embedPlaceholder.querySelector('.embed-overlay');
+
+                        if (overlay) {
+                            overlay.innerHTML = `<p>Loading ${embedType}...</p>`;
+
+                            setTimeout(() => {
+                                overlay.innerHTML = `<p>${embedType.charAt(0).toUpperCase() + embedType.slice(1)} content loaded!</p>`;
+                            }, 2000);
+                        }
+                    }
+
+                    // Track embed load
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('embed', 'load', embedType);
+                    }
+                });
+            });
+
+            // Infographic hotspots
+            const hotspots = document.querySelectorAll('.hotspot');
+
+            hotspots.forEach(hotspot => {
+                hotspot.addEventListener('click', function () {
+                    const hotspotId = this.getAttribute('data-hotspot-id');
+                    const content = this.querySelector('.hotspot-content');
+
+                    // Toggle hotspot content visibility
+                    if (content) {
+                        content.classList.toggle('active');
+                    }
+
+                    // Track hotspot click
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('infographic', 'hotspot_click', hotspotId);
+                    }
+                });
+            });
+        });
+
+        // Define a simple tracking function if not already defined
+        if (typeof trackEvent !== 'function') {
+            function trackEvent(category, action, label) {
+                console.log(`Event tracked: ${category} - ${action} - ${label}`);
+
+                // Send to Google Analytics if available
+                if (typeof gtag === 'function') {
+                    gtag('event', action, {
+                        'event_category': category,
+                        'event_label': label
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
