@@ -1170,3 +1170,4 @@ function trackEvent(category, action, label) {
         });
     }
 }
+console.log("mains.js loaded successfully!");

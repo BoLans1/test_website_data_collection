@@ -5,7 +5,7 @@
     border-radius: 5px;
     margin: 20px auto;
     max-width: 1200px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     font-family: Arial, sans-serif;
 }
 
@@ -118,4 +118,270 @@
 .tracking-manager-status span {
     font-style: italic;
     color: #999;
+}
+
+/* Tracking Manager Styles - Including custom code tab */
+.tracking-manager {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 20px auto;
+    max-width: 1200px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    z-index: 100;
+}
+
+.tracking-manager-header {
+    background-color: #e9ecef;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tracking-manager-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.tracking-manager-content {
+    padding: 20px;
+}
+
+.tracking-manager .tabs {
+    margin-bottom: 20px;
+}
+
+.tracking-manager .tab-nav {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tracking-manager .tab-button {
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #6c757d;
+    position: relative;
+}
+
+.tracking-manager .tab-button.active {
+    color: #007bff;
+}
+
+.tracking-manager .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #007bff;
+}
+
+.tracking-manager .tab-content {
+    display: none;
+}
+
+.tracking-manager .tab-content.active {
+    display: block;
+}
+
+.tracking-manager .form-group {
+    margin-bottom: 15px;
+}
+
+.tracking-manager label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.tracking-manager input[type="text"],
+.tracking-manager textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.tracking-manager textarea {
+    height: 150px;
+    font-family: monospace;
+    white-space: pre;
+    overflow: auto;
+}
+
+.tracking-manager .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.tracking-manager-status {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.tracking-manager-status h3 {
+    margin-top: 0;
+    font-size: 16px;
+}
+
+.tracking-manager-status ul {
+    list-style: none;
+    padding: 0;
+}
+
+.tracking-manager-status li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.tracking-manager-status span {
+    font-style: italic;
+    color: #999;
+}
+
+/* Custom Button Style for Interactive Elements */
+.custom-code-button {
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin: 4px;
+    z-index: 100;
+    display: inline-block;
+    position: relative;
+    top: 0;
+    right: 0;
+}
+
+/* For anchor elements in header, footer, and other specific elements */
+header a .custom-code-button,
+footer a .custom-code-button,
+.newsletter a .custom-code-button,
+.downloads a .custom-code-button,
+.product-filter a .custom-code-button,
+.product-list a .custom-code-button {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 10px;
+    padding: 2px 5px;
+}
+
+/* For container elements that need buttons */
+header .custom-code-button,
+footer .custom-code-button,
+section.downloads .custom-code-button,
+section.newsletter .custom-code-button,
+.product-filter .custom-code-button:not(a .custom-code-button),
+.product-list .custom-code-button:not(a .custom-code-button),
+#cookie-banner .custom-code-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+/* For buttons and form elements */
+button .custom-code-button,
+input[type="submit"] .custom-code-button,
+input[type="checkbox"] .custom-code-button,
+.add-to-cart .custom-code-button,
+.quantity-selector .custom-code-button {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 10px;
+    padding: 2px 5px;
+}
+
+/* Make sure elements that will contain custom code buttons have positioning context */
+header,
+footer,
+section.downloads,
+section.newsletter,
+.product-filter,
+.product-list,
+.add-to-cart,
+.quantity-selector,
+input[type="submit"],
+input[type="checkbox"],
+#cookie-banner,
+.interactive-card,
+main {
+    position: relative;
+}
+
+.custom-code-button:hover {
+    background-color: #138496;
+}
+
+/* Custom Code Modal */
+.custom-code-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-code-modal.active {
+    display: flex;
+}
+
+.custom-code-modal-content {
+    background-color: #fff;
+    border-radius: 5px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.custom-code-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.custom-code-modal-header h3 {
+    margin: 0;
+}
+
+.custom-code-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.custom-code-modal textarea {
+    width: 100%;
+    height: 200px;
+    font-family: monospace;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
