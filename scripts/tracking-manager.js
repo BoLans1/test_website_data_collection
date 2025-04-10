@@ -637,8 +637,9 @@ alert('Custom code executed for ' + element.id);"></textarea>
     };
 
     // Function to apply custom code
+    // Replace the HTML content handling in the applyCustomCode function
     applyCustomCode = function (customCode) {
-        console.log('Applying custom code, length:', customCode.length);
+        console.log('applyCustomCode function called with code length:', customCode.length);
 
         try {
             // Remove existing custom code if any
@@ -648,82 +649,119 @@ alert('Custom code executed for ' + element.id);"></textarea>
             const isHtml = customCode.trim().startsWith('<');
             console.log('Is HTML content:', isHtml);
 
+            // Create marker comments
+            const beginComment = document.createComment(' BEGIN CUSTOM CODE ');
+            const endComment = document.createComment(' END CUSTOM CODE ');
+            document.head.appendChild(beginComment);
+
             if (isHtml) {
                 console.log('Processing HTML content');
-
-                // Create a container for comments
-                const beginComment = document.createComment(' BEGIN CUSTOM CODE ');
-                const endComment = document.createComment(' END CUSTOM CODE ');
-                document.head.appendChild(beginComment);
 
                 // Special handling for content with script tags
                 if (customCode.includes('<script') || customCode.includes('</script>')) {
                     console.log('Detected script tags in HTML');
 
-                    // Parse the HTML to get actual DOM elements
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(`<div id="temp-container">${customCode}</div>`, 'text/html');
-                    const tempContainer = doc.getElementById('temp-container');
+                    try {
+                        // Create a temporary div to parse the HTML into actual DOM elements
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = customCode;
 
-                    // Extract and handle scripts separately
-                    const scripts = tempContainer.querySelectorAll('script');
-                    scripts.forEach((script, index) => {
-                        // Create new script element
-                        const newScript = document.createElement('script');
-                        newScript.id = `custom-script-${index}`;
+                        // Process each script element
+                        const scripts = tempDiv.querySelectorAll('script');
+                        console.log(`Found ${scripts.length} script elements`);
 
-                        // Copy attributes
-                        Array.from(script.attributes).forEach(attr => {
-                            newScript.setAttribute(attr.name, attr.value);
+                        scripts.forEach((script, index) => {
+                            try {
+                                // Create a new script element
+                                const newScript = document.createElement('script');
+                                newScript.id = `custom-script-${index}`;
+
+                                // Copy attributes
+                                for (let i = 0; i < script.attributes.length; i++) {
+                                    const attr = script.attributes[i];
+                                    newScript.setAttribute(attr.name, attr.value);
+                                }
+
+                                // Copy content if any
+                                if (script.innerHTML) {
+                                    newScript.innerHTML = script.innerHTML;
+                                }
+
+                                // Add to head
+                                document.head.appendChild(newScript);
+                                console.log(`Added script ${index} to head`);
+                            } catch (scriptError) {
+                                console.error(`Error processing script ${index}:`, scriptError);
+                            }
                         });
 
-                        // Copy content
-                        if (script.textContent) {
-                            newScript.textContent = script.textContent;
+                        // Handle any non-script content
+                        // First, clone the temp div and remove scripts
+                        const nonScriptDiv = tempDiv.cloneNode(true);
+                        const scriptsToRemove = nonScriptDiv.querySelectorAll('script');
+                        scriptsToRemove.forEach(s => {
+                            if (s.parentNode) {
+                                s.parentNode.removeChild(s);
+                            }
+                        });
+
+                        // Check if there's any remaining content
+                        if (nonScriptDiv.innerHTML.trim()) {
+                            const containerDiv = document.createElement('div');
+                            containerDiv.id = 'custom-head-code-container';
+                            containerDiv.style.display = 'none';
+                            containerDiv.innerHTML = nonScriptDiv.innerHTML;
+                            document.head.appendChild(containerDiv);
+                            console.log('Added non-script content to head');
                         }
-
-                        // Append to head
-                        document.head.appendChild(newScript);
-                        console.log(`Added script ${index} to head`);
-                    });
-
-                    // Handle any remaining HTML content (comments, text, etc.)
-                    const nonScriptContent = tempContainer.innerHTML.replace(/<script[\s\S]*?<\/script>/g, '').trim();
-                    if (nonScriptContent) {
+                    } catch (parseError) {
+                        console.error('Error parsing HTML content:', parseError);
+                        // Fallback: just add as a hidden div
                         const containerDiv = document.createElement('div');
                         containerDiv.id = 'custom-head-code-container';
                         containerDiv.style.display = 'none';
-                        containerDiv.innerHTML = nonScriptContent;
+                        containerDiv.textContent = customCode; // Use textContent to avoid HTML parsing
                         document.head.appendChild(containerDiv);
                     }
                 } else if (customCode.includes('<style') || customCode.includes('</style>')) {
                     // Handle style content
-                    const styleEl = document.createElement('style');
-                    styleEl.id = 'custom-head-code-style';
-                    styleEl.textContent = customCode.replace(/<\/?style[^>]*>/g, '');
-                    document.head.appendChild(styleEl);
+                    console.log('Adding as style element');
+                    try {
+                        const styleEl = document.createElement('style');
+                        styleEl.id = 'custom-head-code-style';
+
+                        // Extract CSS from style tags
+                        const cssContent = customCode.replace(/<\/?style[^>]*>/g, '');
+                        styleEl.textContent = cssContent;
+                        document.head.appendChild(styleEl);
+                        console.log('Style element added');
+                    } catch (styleError) {
+                        console.error('Error adding style element:', styleError);
+                    }
                 } else {
                     // General HTML content
-                    const containerDiv = document.createElement('div');
-                    containerDiv.id = 'custom-head-code-container';
-                    containerDiv.style.display = 'none';
-                    containerDiv.innerHTML = customCode;
-                    document.head.appendChild(containerDiv);
+                    console.log('Adding as general HTML container');
+                    try {
+                        const containerDiv = document.createElement('div');
+                        containerDiv.id = 'custom-head-code-container';
+                        containerDiv.style.display = 'none';
+                        containerDiv.innerHTML = customCode;
+                        document.head.appendChild(containerDiv);
+                        console.log('HTML container added');
+                    } catch (htmlError) {
+                        console.error('Error adding HTML container:', htmlError);
+                    }
                 }
-
-                document.head.appendChild(endComment);
             } else {
                 // JavaScript content
-                const beginComment = document.createComment(' BEGIN CUSTOM CODE ');
-                const endComment = document.createComment(' END CUSTOM CODE ');
-                document.head.appendChild(beginComment);
+                console.log('Adding as JavaScript');
+                try {
+                    const customCodeScript = document.createElement('script');
+                    customCodeScript.id = 'custom-head-code-script';
+                    customCodeScript.type = 'text/javascript';
 
-                const customCodeScript = document.createElement('script');
-                customCodeScript.id = 'custom-head-code-script';
-                customCodeScript.type = 'text/javascript';
-
-                // Add try-catch to prevent errors from breaking the page
-                customCodeScript.textContent = `
+                    // Add try-catch to prevent errors from breaking the page
+                    customCodeScript.textContent = `
                     try {
                         ${customCode}
                     } catch (error) {
@@ -731,14 +769,24 @@ alert('Custom code executed for ' + element.id);"></textarea>
                     }
                 `;
 
-                document.head.appendChild(customCodeScript);
-                document.head.appendChild(endComment);
+                    document.head.appendChild(customCodeScript);
+                    console.log('JavaScript script added');
+                } catch (jsError) {
+                    console.error('Error adding JavaScript:', jsError);
+                }
             }
 
-            // Update the status
+            document.head.appendChild(endComment);
+
+            // Update the status - pass a simple string rather than the full code
             try {
                 updateTrackingStatus('customCode', 'Applied');
                 console.log('Custom code status updated');
+
+                // Delayed status update to ensure UI is refreshed
+                setTimeout(function () {
+                    updateTrackingStatus('customCode', 'Applied');
+                }, 100);
             } catch (statusError) {
                 console.error('Error updating status:', statusError);
             }
