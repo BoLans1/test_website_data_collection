@@ -1274,3 +1274,4 @@ window.trackEvent = function (category, action, label) {
         });
     }
 };
+console.log('Tracking-Manager loaded');
