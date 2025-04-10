@@ -505,11 +505,11 @@ footer {
     border-radius: 50%;
 }
 
-.toggle-switch input:checked + label {
+.toggle-switch input:checked+label {
     background-color: var(--primary-color);
 }
 
-.toggle-switch input:checked + label:before {
+.toggle-switch input:checked+label:before {
     transform: translateX(26px);
 }
 
@@ -1346,6 +1346,7 @@ footer {
         overflow-x: auto;
     }
 }
+
 .hotspot-dot {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.7);
@@ -1356,7 +1357,7 @@ footer {
     display: none;
 }
 
-.hotspot-conetent{
+.hotspot-conetent {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
